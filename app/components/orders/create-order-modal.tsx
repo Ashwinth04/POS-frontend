@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { createOrder } from "../../lib/order-api"
+import { createOrder, editOrder } from "../../lib/order-api"
 import { toast } from "sonner"
 import { Order } from "../../types/order"
 import { getInvoice } from "../../lib/order-api"
@@ -59,6 +59,11 @@ export default function CreateOrderModal({
     ])
   }
 
+  function removeItem(index: number) {
+    setItems(items.filter((_, i) => i !== index))
+  }
+
+
   function update(index: number, field: keyof Item, value: string) {
     const copy = [...items]
     copy[index][field] = value
@@ -74,7 +79,10 @@ export default function CreateOrderModal({
       sellingPrice: Number(i.sellingPrice),
     }))
 
-    const res = await createOrder(payload)
+    const res = initialOrder
+  ? await editOrder(initialOrder.id, payload)
+  : await createOrder(payload)
+
 
     console.log(res.orderItems);
 
@@ -96,7 +104,13 @@ export default function CreateOrderModal({
     console.log("Has error: ", hasError)
 
     if (!hasError) {
-      toast.success("Order placed successfully")
+      if (initialOrder == null) {
+        toast.success("Order placed successfully")
+      }
+      else {
+        toast.success("Order edited successfully!")
+      }
+      
       console.log(res)
       setCreatedOrderId(res.orderId) // or res.orderId depending on backend
       return
@@ -128,10 +142,17 @@ export default function CreateOrderModal({
         {/* Items */}
         <div className="space-y-4 max-h-[400px] overflow-auto pr-1">
           {items.map((item, i) => (
-            <div
-              key={i}
-              className="border rounded-xl p-4 space-y-3 bg-gray-50"
-            >
+              <div
+                key={i}
+                className="border rounded-xl p-4 space-y-3 bg-gray-50 relative"
+              >
+                <button
+                  onClick={() => removeItem(i)}
+                  className="absolute top-3 right-3 text-gray-400 hover:text-red-600 hover:cursor-pointer"
+                  title="Delete item"
+                >
+                  🗑️
+                </button>
               <div className="grid grid-cols-3 gap-4">
                 <input
                   placeholder="Barcode"

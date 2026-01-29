@@ -18,7 +18,7 @@ export default function LoginPage() {
       const res = await fetch("http://localhost:8080/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // 🔥 REQUIRED for session auth
+        credentials: "include", 
         body: JSON.stringify({ username, password }),
       })
 
@@ -31,6 +31,7 @@ export default function LoginPage() {
 
       // success
       saveUser(data)   // 👈 store user + timestamp
+      sessionStorage.removeItem("explicitLogout")
       router.push("/orders")
     } catch {
       setError("Server not reachable")

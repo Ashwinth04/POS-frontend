@@ -27,14 +27,18 @@ export default function Navbar() {
 
   useEffect(() => {
   async function loadUser() {
-    // 1. Try cache first
     const cached = getCachedUser()
+
+    // If explicitly logged out → don't call backend
+    if (!cached && sessionStorage.getItem("explicitLogout") === "true") {
+      return
+    }
+
     if (cached) {
       setUser(cached)
       return
     }
 
-    // 2. Cache expired → call backend
     try {
       const res = await fetch("http://localhost:8080/auth/me", {
         credentials: "include",
@@ -42,19 +46,14 @@ export default function Navbar() {
       })
 
       if (!res.ok) {
-        clearUser()
         setUser(null)
         return
       }
 
       const data = await res.json()
-
-      // 3. Save to cache
       saveUser(data)
-
       setUser(data)
     } catch {
-      clearUser()
       setUser(null)
     }
   }
@@ -63,16 +62,19 @@ export default function Navbar() {
 }, [])
 
 
-  async function handleLogout() {
-    await fetch("http://localhost:8080/auth/logout", {
-      method: "POST",
-      credentials: "include",
-    })
 
-    setUser(null)
-    clearUser()
-    router.push("/login")
-  }
+  async function handleLogout() {
+  await fetch("http://localhost:8080/auth/logout", {
+    method: "POST",
+    credentials: "include",
+  })
+
+  clearUser()
+  sessionStorage.setItem("explicitLogout", "true")
+  setUser(null)
+  router.push("/login")
+}
+
 
   if (pathname === "/login") return null
 

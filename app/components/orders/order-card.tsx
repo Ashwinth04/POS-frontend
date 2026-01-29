@@ -4,14 +4,26 @@ import { useState } from "react"
 import { Order } from "../../types/order"
 import { getInvoice } from "../../lib/order-api" // adjust path if needed
 import { toast } from "sonner"
+import { cancelOrder, generateInvoice, downloadInvoice } from "../../lib/order-api"
+import { downloadBase64Pdf } from "../../lib/file"
+
+
+const statusStyles: Record<string, string> = {
+  FULFILLABLE: "bg-green-100 text-green-700",
+  UNFULFILLABLE: "bg-yellow-100 text-yellow-800",
+  PLACED: "bg-blue-100 text-blue-700",
+  CANCELLED: "bg-gray-200 text-gray-600",
+}
 
 
 export default function OrderCard({
   order,
   onRetry,
+  onRefresh,
 }: {
   order: Order
   onRetry: (order: Order) => void
+  onRefresh: () => void
 }) {
   const [open, setOpen] = useState(false)
 
@@ -36,6 +48,36 @@ export default function OrderCard({
 }
 
 
+const handleCancel = async () => {
+  try {
+    await cancelOrder(order.id)
+    toast.success("Order cancelled")
+    onRefresh();
+  } catch {
+    toast.error("Failed to cancel order")
+  }
+}
+
+const handleGenerateInvoice = async () => {
+  try {
+    const res = await generateInvoice(order.id)
+    downloadBase64Pdf(res.base64file, `invoice-${order.id}.pdf`)
+    onRefresh();
+  } catch {
+    toast.error("Failed to generate invoice")
+  }
+}
+
+const handleDownloadInvoice = async () => {
+  try {
+    const res = await downloadInvoice(order.id)
+    downloadBase64Pdf(res.base64file, `invoice-${order.id}.pdf`)
+  } catch {
+    toast.error("Failed to download invoice")
+  }
+}
+
+
 
   return (
     <div className="bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition">
@@ -48,15 +90,10 @@ export default function OrderCard({
           </p>
         </div>
 
-        <span
-          className={`px-3 py-1 rounded-full text-sm font-medium ${
-            order.orderStatus === "FULFILLABLE"
-              ? "bg-green-100 text-green-700"
-              : "bg-red-100 text-red-700"
-          }`}
-        >
-          {order.orderStatus}
-        </span>
+        <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusStyles[order.orderStatus]}`}>
+  {order.orderStatus}
+</span>
+
       </div>
 
       {/* Toggle */}
@@ -103,33 +140,51 @@ export default function OrderCard({
       {/* Retry */}
       
       <div className="flex justify-between items-end w-full mt-5">
-  
-  {/* Left side */}
-  <div>
-    {order.orderStatus === "UNFULFILLABLE" && (
+  {/* Left */}
+  <div className="flex gap-3">
+  {(order.orderStatus === "FULFILLABLE" ||
+    order.orderStatus === "UNFULFILLABLE") && (
+    <>
       <button
         onClick={() => onRetry(order)}
-        className="border px-4 py-2 rounded-lg hover:bg-gray-50 hover:cursor-pointer"
+        className="border px-4 py-2 rounded-lg hover:bg-gray-50"
       >
-        Retry Order
+        Edit Order
       </button>
-    )}
-  </div>
 
-  {/* Right side */}
-  {/* Right side */}
-<div>
-  {order.orderStatus !== "UNFULFILLABLE" && (
+      <button
+        onClick={handleCancel}
+        className="border px-4 py-2 rounded-lg text-red-600 hover:bg-red-50"
+      >
+        Cancel Order
+      </button>
+    </>
+  )}
+
+  {order.orderStatus === "FULFILLABLE" && (
     <button
-      onClick={handleDownload}
-      className="text-blue-600 hover:underline text-sm hover:cursor-pointer"
+      onClick={handleGenerateInvoice}
+      className="text-green-700 hover:underline text-sm"
     >
-      Download invoice
+      Generate Invoice
     </button>
   )}
 </div>
 
+
+  {/* Right */}
+  <div>
+    {order.orderStatus === "PLACED" && (
+      <button
+        onClick={handleDownloadInvoice}
+        className="text-blue-600 hover:underline text-sm"
+      >
+        Download Invoice
+      </button>
+    )}
+  </div>
 </div>
+
     </div>
   )
 }

@@ -13,66 +13,54 @@ export default function AuthGuard({
   allowedRoles?: string[]
 }) {
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [allowed, setAllowed] = useState(false)
+  const [status, setStatus] = useState<"loading" | "allowed" | "denied">("loading")
 
   useEffect(() => {
     async function checkAuth() {
-      // 1. Try cache first
       const cached = getCachedUser()
 
-      console.log("Is cached: " + cached?.role + " " + cached?.userId)
-      console.log("Allowed roles: " + allowedRoles)
-
       if (cached) {
-        // Role check still applies
-        console.log("Not calling backend for auth verification")
         if (allowedRoles && !allowedRoles.includes(cached.role)) {
-          
           router.replace("/orders")
+          setStatus("denied")
           return
         }
 
-        setAllowed(true)
-        setLoading(false)
+        setStatus("allowed")
         return
       }
 
-      // 2. Otherwise call backend
-      try {
-        console.log("Calling backend for auth verification")
-        const user = await getCurrentUser()
+      const user = await getCurrentUser()
 
-        if (!user) {
-          clearUser()
-          router.replace("/login")
-          return
-        }
-
-        // Save fresh user to cache
-        saveUser(user)
-
-        // Role check
-        if (allowedRoles && !allowedRoles.includes(user.role)) {
-          router.replace("/orders")
-          return
-        }
-
-        setAllowed(true)
-      } catch {
+      if (!user) {
         clearUser()
         router.replace("/login")
-      } finally {
-        setLoading(false)
+        setStatus("denied")
+        return
       }
+
+      if (allowedRoles && !allowedRoles.includes(user.role)) {
+        router.replace("/orders")
+        setStatus("denied")
+        return
+      }
+
+      saveUser(user)
+      setStatus("allowed")
     }
 
     checkAuth()
   }, [])
 
-  if (loading) return <div className="p-10">Checking session...</div>
+  if (status === "loading") {
+    return (
+      <div className="p-10 text-gray-500">
+        Checking session...
+      </div>
+    )
+  }
 
-  if (!allowed) return null
+  if (status === "denied") return null
 
   return <>{children}</>
 }

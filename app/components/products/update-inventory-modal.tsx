@@ -51,7 +51,12 @@ export default function UpdateInventoryModal({ barcode }: { barcode: string }) {
         <Input
           placeholder="Enter quantity"
           value={qty}
-          onChange={(e) => setQty(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (/^\d*$/.test(value)) {   // allows only digits
+              setQty(value);
+            }
+          }}
         />
 
         <Button onClick={handleSubmit} className="w-full mt-4 hover:cursor-pointer">

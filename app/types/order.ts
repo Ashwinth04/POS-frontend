@@ -11,6 +11,6 @@ export type OrderItem = {
 export type Order = {
   orderTime: string
   id: string
-  orderStatus: "FULFILLABLE" | "UNFULFILLABLE"
+  orderStatus: "FULFILLABLE" | "UNFULFILLABLE" | "CANCELLED" | "PLACED"
   orderItems: OrderItem[]
 }
