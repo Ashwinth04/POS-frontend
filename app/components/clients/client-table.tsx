@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { Client } from "../../types/client"
-import EditClientModal from "./edit-client-modal"
+import { Client } from "../../types/client";
+import EditClientModal from "./edit-client-modal";
 import {
   Table,
   TableBody,
@@ -9,21 +9,24 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 
 export default function ClientTable({
   clients,
   setClients,
+  canEdit,
 }: {
-  clients: Client[]
-  setClients: (c: Client[]) => void
+  clients: Client[];
+  setClients: (c: Client[]) => void;
+  canEdit: boolean;
 }) {
   function handleUpdate(updated: Client) {
-    setClients(clients.map((c) => (c.id === updated.id ? updated : c)))
+    setClients(clients.map((c) => (c.id === updated.id ? updated : c)));
   }
 
   return (
-    <Table>
+    <Table className="w-full table-auto">
       <TableHeader>
         <TableRow className="bg-muted/50">
           <TableHead>Name</TableHead>
@@ -42,11 +45,17 @@ export default function ClientTable({
             <TableCell>{client.location}</TableCell>
             <TableCell>{client.phoneNumber}</TableCell>
             <TableCell className="text-right">
-              <EditClientModal client={client} onUpdated={handleUpdate} />
+              {canEdit ? (
+                <EditClientModal client={client} onUpdated={handleUpdate} />
+              ) : (
+                <Button disabled size="sm" variant="outline">
+                  Edit
+                </Button>
+              )}
             </TableCell>
           </TableRow>
         ))}
       </TableBody>
     </Table>
-  )
+  );
 }

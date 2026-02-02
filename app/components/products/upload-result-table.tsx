@@ -1,6 +1,6 @@
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@/components/ui/badge";
 
-type Row = { barcode: string; status: string; message: string }
+type Row = { barcode: string; status: string; message: string };
 
 export default function UploadResultTable({ rows }: { rows: Row[] }) {
   return (
@@ -17,7 +17,9 @@ export default function UploadResultTable({ rows }: { rows: Row[] }) {
           <tr key={i} className="border-t">
             <td className="p-2">{r.barcode}</td>
             <td>
-              <Badge variant={r.status === "FULFILLABLE" ? "default" : "destructive"}>
+              <Badge
+                variant={r.status === "FULFILLABLE" ? "default" : "destructive"}
+              >
                 {r.status}
               </Badge>
             </td>
@@ -26,5 +28,5 @@ export default function UploadResultTable({ rows }: { rows: Row[] }) {
         ))}
       </tbody>
     </table>
-  )
+  );
 }

@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
 import {
   Pagination,
   PaginationContent,
@@ -8,64 +8,63 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination"
+} from "@/components/ui/pagination";
 
 type Operator = {
-  username: string
-  status: "ACTIVE" | "REVOKED" | null
-}
+  username: string;
+  status: "ACTIVE" | "REVOKED" | null;
+};
 
 type ApiResponse = {
-  content: Operator[]
-  totalPages: number
-  number: number // current page index (0-based)
-}
+  content: Operator[];
+  totalPages: number;
+  number: number; // current page index (0-based)
+};
 
 export default function OperatorsTable() {
-  const [operators, setOperators] = useState<Operator[]>([])
-  const [page, setPage] = useState(0)
-  const [totalPages, setTotalPages] = useState(1)
-  const size = 5
+  const [operators, setOperators] = useState<Operator[]>([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const size = 5;
 
   async function fetchOperators(p: number) {
-  try {
-    const res = await fetch("http://localhost:8080/auth/get-all-operators", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ page: p, size }),
-    })
+    try {
+      const res = await fetch("http://localhost:8080/auth/get-all-operators", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ page: p, size }),
+      });
 
-    if (!res.ok) return
+      if (!res.ok) return;
 
-    const data = await res.json()
+      const data = await res.json();
 
-    const cleaned = (data.content || []).filter(
-      (op: any) => op.username && op.username.trim() !== ""
-    )
+      const cleaned = (data.content || []).filter(
+        (op: any) => op.username && op.username.trim() !== "",
+      );
 
-    // 👇 If backend claims page exists but actually returns garbage
-    if (cleaned.length === 0 && p > 0) {
-      fetchOperators(p - 1)
-      return
+      // 👇 If backend claims page exists but actually returns garbage
+      if (cleaned.length === 0 && p > 0) {
+        fetchOperators(p - 1);
+        return;
+      }
+
+      setOperators(cleaned);
+      setTotalPages(data.totalPages);
+      setPage(p);
+    } catch (e) {
+      console.error("Failed to fetch operators", e);
     }
-
-    setOperators(cleaned)
-    setTotalPages(data.totalPages)
-    setPage(p)
-  } catch (e) {
-    console.error("Failed to fetch operators", e)
   }
-}
-
 
   useEffect(() => {
-    fetchOperators(page)
-  }, [])
+    fetchOperators(page);
+  }, []);
 
   function handlePageChange(newPage: number) {
-    if (newPage < 0 || newPage >= totalPages) return
-    fetchOperators(newPage)
+    if (newPage < 0 || newPage >= totalPages) return;
+    fetchOperators(newPage);
   }
 
   function handleRevoke(index: number) {
@@ -73,9 +72,9 @@ export default function OperatorsTable() {
       prev.map((op, i) =>
         i === index
           ? { ...op, status: op.status === "REVOKED" ? "ACTIVE" : "REVOKED" }
-          : op
-      )
-    )
+          : op,
+      ),
+    );
   }
 
   return (
@@ -93,7 +92,7 @@ export default function OperatorsTable() {
 
         <tbody>
           {operators.map((op, i) => {
-            const active = op.status !== "REVOKED"
+            const active = op.status !== "REVOKED";
 
             return (
               <tr key={op.username} className="border-b last:border-0">
@@ -120,7 +119,7 @@ export default function OperatorsTable() {
                   </button>
                 </td>
               </tr>
-            )
+            );
           })}
 
           {operators.length === 0 && (
@@ -165,5 +164,5 @@ export default function OperatorsTable() {
         </PaginationContent>
       </Pagination>
     </div>
-  )
+  );
 }

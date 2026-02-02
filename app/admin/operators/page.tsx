@@ -1,28 +1,28 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
-import OperatorsTable from "@/app/components/admin/operators-table"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import OperatorsTable from "@/app/components/admin/operators-table";
 
 type User = {
-  userId: string
-  role: string
-}
+  userId: string;
+  role: string;
+};
 
 type Operator = {
-  username: string
-  active: boolean
-}
+  username: string;
+  active: boolean;
+};
 
 export default function OperatorsPage() {
-  const router = useRouter()
+  const router = useRouter();
 
-  const [user, setUser] = useState<User | null>(null)
-  const [operators, setOperators] = useState<Operator[]>([])
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
-  const [message, setMessage] = useState("")
+  const [user, setUser] = useState<User | null>(null);
+  const [operators, setOperators] = useState<Operator[]>([]);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
 
   // Protect page (Supervisor only)
   useEffect(() => {
@@ -30,38 +30,42 @@ export default function OperatorsPage() {
       const res = await fetch("http://localhost:8080/auth/me", {
         credentials: "include",
         cache: "no-store",
-      })
+      });
 
       if (!res.ok) {
-        router.push("/login")
-        return
+        router.push("/login");
+        return;
       }
 
-      const data = await res.json()
+      const data = await res.json();
 
       if (data.role !== "ROLE_SUPERVISOR") {
-        router.push("/orders")
-        return
+        router.push("/orders");
+        return;
       }
 
-      setUser(data)
+      setUser(data);
 
       // dummy operators for now
       setOperators([
         { username: "operator1", active: true },
         { username: "operator2", active: true },
-      ])
+      ]);
     }
 
-    init()
-  }, [])
+    init();
+  }, []);
 
   async function handleCreate() {
-    setMessage("")
+    setMessage("");
 
     if (!username || !password) {
-      toast.error("Username and password required")
-      return
+      toast.error("Something went wrong", {
+        duration: Infinity, // 👈 stays forever
+        closeButton: true, // 👈 only for failures
+      });
+
+      return;
     }
 
     try {
@@ -72,37 +76,38 @@ export default function OperatorsPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ username, password }),
-      })
+      });
 
       if (!res.ok) {
-        const text = await res.text()
-        toast.error(text || "Failed to create operator")
-        return
+        const text = await res.text();
+        toast.error(text || "Failed to create operator", {
+          duration: Infinity,
+          closeButton: true,
+        });
+        return;
       }
 
       // Add locally (since backend has no list endpoint)
-      setOperators((prev) => [
-        ...prev,
-        { username, active: true },
-      ])
+      setOperators((prev) => [...prev, { username, active: true }]);
 
-      setUsername("")
-      setPassword("")
-      toast.success("Operator created successfully")
+      setUsername("");
+      setPassword("");
+      toast.success("Operator created successfully");
     } catch {
-      toast.error("Server error")
+      toast.error("Server error", {
+        duration: Infinity,
+        closeButton: true,
+      });
     }
   }
 
   function handleRevoke(index: number) {
     setOperators((prev) =>
-      prev.map((op, i) =>
-        i === index ? { ...op, active: !op.active } : op
-      )
-    )
+      prev.map((op, i) => (i === index ? { ...op, active: !op.active } : op)),
+    );
   }
 
-  if (!user) return null
+  if (!user) return null;
 
   return (
     <div className="mx-auto max-w-4xl p-6 space-y-8">
@@ -154,5 +159,5 @@ export default function OperatorsPage() {
       {/* Operators Table */}
       <OperatorsTable />
     </div>
-  )
+  );
 }

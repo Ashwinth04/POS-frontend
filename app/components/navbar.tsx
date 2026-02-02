@@ -1,93 +1,118 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
-import { cn } from "@/lib/utils"
-import { getCachedUser, saveUser, clearUser } from "../lib/auth-cache"
-
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
+import { getCachedUser, saveUser, clearUser } from "../lib/auth-cache";
 
 type User = {
-  userId: string
-  role: "ROLE_SUPERVISOR" | "ROLE_OPERATOR"
-}
+  userId: string;
+  role: "ROLE_SUPERVISOR" | "ROLE_OPERATOR";
+};
 
 const navItems = [
-  { name: "Clients", href: "/clients", roles: ["ROLE_SUPERVISOR"] },
-  { name: "Products", href: "/products", roles: ["ROLE_SUPERVISOR"] },
-  { name: "Orders", href: "/orders", roles: ["ROLE_SUPERVISOR", "ROLE_OPERATOR"] },
+  {
+    name: "Clients",
+    href: "/clients",
+    roles: ["ROLE_SUPERVISOR", "ROLE_OPERATOR"],
+  },
+  {
+    name: "Products",
+    href: "/products",
+    roles: ["ROLE_SUPERVISOR", "ROLE_OPERATOR"],
+  },
+  {
+    name: "Orders",
+    href: "/orders",
+    roles: ["ROLE_SUPERVISOR", "ROLE_OPERATOR"],
+  },
   { name: "Admin", href: "/admin/operators", roles: ["ROLE_SUPERVISOR"] },
-]
+  { name: "Sales", href: "/sales", roles: ["ROLE_SUPERVISOR"] },
+];
 
 export default function Navbar() {
-  const pathname = usePathname()
-  const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
-  const [open, setOpen] = useState(false)
+  const pathname = usePathname();
+  const router = useRouter();
 
+  const [user, setUser] = useState<User | null>(null);
+  const [open, setOpen] = useState(true);
+
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  // Load user whenever pathname changes
   useEffect(() => {
-  async function loadUser() {
-    const cached = getCachedUser()
+    async function loadUser() {
+      const cached = getCachedUser();
 
-    // If explicitly logged out → don't call backend
-    if (!cached && sessionStorage.getItem("explicitLogout") === "true") {
-      return
-    }
-
-    if (cached) {
-      setUser(cached)
-      return
-    }
-
-    try {
-      const res = await fetch("http://localhost:8080/auth/me", {
-        credentials: "include",
-        cache: "no-store",
-      })
-
-      if (!res.ok) {
-        setUser(null)
-        return
+      if (cached && sessionStorage.getItem("explicitLogout") === "true") {
+        sessionStorage.removeItem("explicitLogout");
       }
 
-      const data = await res.json()
-      saveUser(data)
-      setUser(data)
-    } catch {
-      setUser(null)
+      if (cached) {
+        setUser(cached);
+        return;
+      }
+
+      try {
+        const res = await fetch("http://localhost:8080/auth/me", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          setUser(null);
+          return;
+        }
+        const data = await res.json();
+        saveUser(data);
+        setUser(data);
+      } catch {
+        setUser(null);
+      }
     }
-  }
 
-  loadUser()
-}, [])
+    loadUser();
+  }, [pathname]);
 
+  // ✅ Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        open &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    }
 
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
 
   async function handleLogout() {
-  await fetch("http://localhost:8080/auth/logout", {
-    method: "POST",
-    credentials: "include",
-  })
+    await fetch("http://localhost:8080/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
 
-  clearUser()
-  sessionStorage.setItem("explicitLogout", "true")
-  setUser(null)
-  router.push("/login")
-}
+    clearUser();
+    sessionStorage.setItem("explicitLogout", "true");
+    setUser(null);
+    router.push("/login");
+  }
 
-
-  if (pathname === "/login") return null
+  if (pathname === "/login") return null;
 
   const visibleItems = navItems.filter(
-    (item) => user && item.roles.includes(user.role)
-  )
+    (item) => user?.role && item.roles.includes(user.role),
+  );
 
-  const initials = user?.userId?.slice(0, 2).toUpperCase()
+  const initials = user?.userId?.slice(0, 2).toUpperCase();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        
         {/* Brand */}
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl bg-black text-white flex items-center justify-center font-bold shadow">
@@ -101,8 +126,7 @@ export default function Navbar() {
         {/* Nav */}
         <nav className="flex items-center gap-8">
           {visibleItems.map((item) => {
-            const active = pathname.startsWith(item.href)
-
+            const active = pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
@@ -111,7 +135,7 @@ export default function Navbar() {
                   "relative text-sm font-medium transition-colors",
                   active
                     ? "text-gray-900"
-                    : "text-gray-500 hover:text-gray-900"
+                    : "text-gray-500 hover:text-gray-900",
                 )}
               >
                 {item.name}
@@ -119,15 +143,15 @@ export default function Navbar() {
                   <span className="absolute -bottom-2 left-0 h-[2px] w-full bg-black rounded-full" />
                 )}
               </Link>
-            )
+            );
           })}
         </nav>
 
         {/* Profile */}
         {user && (
-          <div className="relative">
+          <div ref={dropdownRef} className="relative">
             <button
-              onClick={() => setOpen(!open)}
+              onClick={() => setOpen((v) => !v)}
               className="flex items-center gap-3 rounded-full border bg-white px-3 py-1.5 shadow-sm hover:shadow transition"
             >
               <div className="h-8 w-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
@@ -142,7 +166,6 @@ export default function Navbar() {
               <span className="text-gray-400 text-xs">▾</span>
             </button>
 
-            {/* Dropdown */}
             {open && (
               <div className="absolute right-0 mt-2 w-48 rounded-xl border bg-white shadow-lg overflow-hidden">
                 <button
@@ -157,5 +180,5 @@ export default function Navbar() {
         )}
       </div>
     </header>
-  )
+  );
 }

@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { toast } from "sonner"
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 async function bulkUpdateInventory(base64file: string) {
   const res = await fetch("http://localhost:8080/api/inventory/bulkUpdate", {
@@ -19,77 +19,86 @@ async function bulkUpdateInventory(base64file: string) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ base64file }),
-  })
+  });
 
   if (!res.ok) {
-    const text = await res.text()
-    throw new Error(text || "Bulk update failed")
+    const text = await res.text();
+    throw new Error(text || "Bulk update failed");
   }
 
-  return res.json()
+  return res.json();
 }
 
 export default function InventoryBulkUpdateModal() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
-  const [file, setFile] = useState<File | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [resultUrl, setResultUrl] = useState<string | null>(null)
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [resultUrl, setResultUrl] = useState<string | null>(null);
 
   function resetState() {
-    setFile(null)
-    setLoading(false)
-    setResultUrl(null)
+    setFile(null);
+    setLoading(false);
+    setResultUrl(null);
   }
 
   function handleOpenChange(value: boolean) {
-    setOpen(value)
-    if (!value) resetState()
+    setOpen(value);
+    if (!value) resetState();
   }
 
   function fileToBase64(file: File) {
     return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   }
 
   async function handleSubmit() {
     if (!file) {
-      toast.error("Please select a TSV file")
-      return
+      toast.error("Please select a TSV file", {
+        duration: Infinity,
+        closeButton: true,
+      });
+      return;
     }
 
     try {
-      setLoading(true)
+      setLoading(true);
 
-      const base64 = await fileToBase64(file)
-      const clean = base64.split(",")[1]
+      const base64 = await fileToBase64(file);
+      const clean = base64.split(",")[1];
 
-      const response = await bulkUpdateInventory(clean)
+      const response = await bulkUpdateInventory(clean);
 
-      console.log("Response: " + response.status + " " + response.base64file)
+      console.log("Response: " + response.status + " " + response.base64file);
 
       if (response.status === "SUCCESS") {
-        toast.success("Inventory updated successfully")
-        setResultUrl(null)
+        toast.success("Inventory updated successfully");
+        setResultUrl(null);
       } else {
-        toast.error("Some rows failed. Download the result file.")
-        
-        const decoded = atob(response.base64file)
+        toast.error("Some rows failed. Download the result file.", {
+          duration: Infinity,
+          closeButton: true,
+        });
+
+        const decoded = atob(response.base64file);
         const blob = new Blob([decoded], {
           type: "text/tab-separated-values",
-        })
-        const url = URL.createObjectURL(blob)
+        });
+        const url = URL.createObjectURL(blob);
 
-        setResultUrl(url)
+        setResultUrl(url);
       }
     } catch (err: any) {
-      toast.error(err.message || "Something went wrong")
+      toast.error(err.message || "Something went wrong", {
+        duration: Infinity,
+        closeButton: true,
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -127,5 +136,5 @@ export default function InventoryBulkUpdateModal() {
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

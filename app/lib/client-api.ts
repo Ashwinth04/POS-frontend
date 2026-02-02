@@ -1,24 +1,24 @@
-import { Client } from "../types/client"
+import { Client } from "../types/client";
 
-const BASE = "http://localhost:8080/api/clients"
+const BASE = "http://localhost:8080/api/clients";
 
 async function handleResponse(res: Response) {
-  const text = await res.text()
+  const text = await res.text();
 
   try {
-    const json = JSON.parse(text)
+    const json = JSON.parse(text);
 
     if (!res.ok) {
-      throw new Error(json.message || "Something went wrong")
+      throw new Error(json.message || "Something went wrong");
     }
 
-    return json
+    return json;
   } catch {
     if (!res.ok) {
-      throw new Error(text || "Something went wrong")
+      throw new Error(text || "Something went wrong");
     }
 
-    return text
+    return text;
   }
 }
 
@@ -29,9 +29,9 @@ export async function fetchClients(page = 0, size = 10) {
     body: JSON.stringify({ page, size }),
     cache: "no-store",
     credentials: "include",
-  })
+  });
 
-  return handleResponse(res)
+  return handleResponse(res);
 }
 
 export async function addClient(client: Omit<Client, "id">) {
@@ -40,18 +40,21 @@ export async function addClient(client: Omit<Client, "id">) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(client),
     credentials: "include",
-  })
+  });
 
-  return handleResponse(res)
+  return handleResponse(res);
 }
 
-export async function updateClient(oldName: string, client: Omit<Client, "id">) {
-  const res = await fetch(`${BASE}/update/${oldName}`, {
+export async function updateClient(
+  oldName: string,
+  client: Omit<Client, "id">,
+) {
+  const res = await fetch(`${BASE}/update`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(client),
     credentials: "include",
-  })
+  });
 
-  return handleResponse(res)
+  return handleResponse(res);
 }

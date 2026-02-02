@@ -1,218 +1,233 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { createOrder, editOrder } from "../../lib/order-api"
-import { toast } from "sonner"
-import { Order } from "../../types/order"
-import { getInvoice } from "../../lib/order-api"
-
+import { useState } from "react";
+import { createOrder, getInvoice } from "../../lib/order-api";
+import { toast } from "sonner";
 
 type Item = {
-  orderItemId?: string
-  barcode: string
-  orderedQuantity: string
-  sellingPrice: string
-  error?: string
-}
+  orderItemId?: string;
+  barcode: string;
+  orderedQuantity: string;
+  sellingPrice: string;
+  error?: string;
+};
 
 export async function downloadInvoice(orderId: string) {
-  const blob = await getInvoice(orderId)
+  const blob = await getInvoice(orderId);
 
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = `invoice-${orderId}.pdf`
-  document.body.appendChild(a)
-  a.click()
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `invoice-${orderId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
 
-  a.remove()
-  window.URL.revokeObjectURL(url)
+  a.remove();
+  window.URL.revokeObjectURL(url);
 }
 
+function TrashIcon({ className = "" }) {
+  return (
+    <svg
+      className={className}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+    </svg>
+  );
+}
 
-export default function CreateOrderModal({
-  onClose,
-  initialOrder,
-}: {
-  onClose: () => void
-  initialOrder?: Order | null
-}) {
-  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null)
-  const [items, setItems] = useState<Item[]>(() => {
-    if (!initialOrder) {
-      return [{ barcode: "", orderedQuantity: "", sellingPrice: "" }]
-    }
-
-
-    return initialOrder.orderItems.map((i) => ({
-      orderItemId: i.orderItemId,
-      barcode: i.barcode,
-      orderedQuantity: String(i.orderedQuantity),
-      sellingPrice: String(i.sellingPrice),
-    }))
-  })
+export default function CreateOrderModal({ onClose }: { onClose: () => void }) {
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [items, setItems] = useState<Item[]>([
+    { barcode: "", orderedQuantity: "", sellingPrice: "" },
+  ]);
 
   function addItem() {
     setItems([
       ...items,
-      {barcode: "", orderedQuantity: "", sellingPrice: "" },
-    ])
+      { barcode: "", orderedQuantity: "", sellingPrice: "" },
+    ]);
   }
 
   function removeItem(index: number) {
-    setItems(items.filter((_, i) => i !== index))
+    setItems(items.filter((_, i) => i !== index));
   }
 
-
   function update(index: number, field: keyof Item, value: string) {
-    const copy = [...items]
-    copy[index][field] = value
-    copy[index].error = undefined
-    setItems(copy)
+    const copy = [...items];
+    copy[index][field] = value;
+    copy[index].error = undefined;
+    setItems(copy);
   }
 
   async function handleSubmit() {
-  try {
-    const payload = items.map((i) => ({
-      barcode: i.barcode,
-      orderedQuantity: Number(i.orderedQuantity),
-      sellingPrice: Number(i.sellingPrice),
-    }))
+    try {
+      const payload = items.map((i) => ({
+        barcode: i.barcode,
+        orderedQuantity: Number(i.orderedQuantity),
+        sellingPrice: Number(i.sellingPrice),
+      }));
 
-    const res = initialOrder
-  ? await editOrder(initialOrder.id, payload)
-  : await createOrder(payload)
+      const res = await createOrder(payload);
 
-
-    console.log(res.orderItems);
-
-    // Clear old errors
-    const updated = items.map(i => ({ ...i, error: undefined }))
-
-    const results = res.orderItems || []
-
-    let hasError = false
-
-    results.forEach((result: any, index: number) => {
-      console.log("Result status: ", result.status)
-      if (result.status !== "VALID" && result.status != "FULFILLABLE") {
-        updated[index].error = result.message
-        hasError = true
-      }
-    })
-
-    console.log("Has error: ", hasError)
-
-    if (!hasError) {
-      if (initialOrder == null) {
-        toast.success("Order placed successfully")
-      }
-      else {
-        toast.success("Order edited successfully!")
-      }
-      
-      console.log(res)
-      setCreatedOrderId(res.orderId) // or res.orderId depending on backend
-      return
+      toast.success("Order created successfully");
+      setCreatedOrderId(res.orderId);
+    } catch (e: any) {
+      toast.error(e.message || "Something went wrong", {
+        duration: Infinity,
+        closeButton: true,
+      });
     }
-
-
-    setItems(updated)
-  } catch (e: any) {
-    alert(e.message || "Something went wrong")
   }
-}
 
-
-
-  
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-      <div className="bg-white w-[750px] rounded-2xl shadow-xl p-6 max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="w-[760px] max-h-[90vh] overflow-hidden rounded-2xl bg-white shadow-2xl">
         {/* Header */}
-        <div className="flex justify-between items-center mb-5">
-          <h2 className="text-xl font-semibold">
-            {initialOrder ? "Retry Order" : "Create Order"}
-          </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-black hover:cursor-pointer">
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Create Order
+            </h2>
+            <p className="text-sm text-gray-500">
+              Add items and confirm to place the order
+            </p>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+          >
             ✕
           </button>
         </div>
 
         {/* Items */}
-        <div className="space-y-4 max-h-[400px] overflow-auto pr-1">
+        <div className="max-h-[420px] space-y-4 overflow-y-scroll px-6 py-5">
           {items.map((item, i) => (
-              <div
-                key={i}
-                className="border rounded-xl p-4 space-y-3 bg-gray-50 relative"
-              >
-                <button
-                  onClick={() => removeItem(i)}
-                  className="absolute top-3 right-3 text-gray-400 hover:text-red-600 hover:cursor-pointer"
-                  title="Delete item"
-                >
-                  🗑️
-                </button>
-              <div className="grid grid-cols-3 gap-4">
-                <input
-                  placeholder="Barcode"
-                  value={item.barcode}
-                  onChange={(e) => update(i, "barcode", e.target.value)}
-                  className="border px-3 py-2 rounded-lg"
-                />
+            <div
+              key={i}
+              className="group relative rounded-xl border bg-gray-50 p-4 shadow-sm"
+            >
+              <div className="flex items-start gap-4">
+                {/* Inputs */}
+                <div className="grid flex-1 grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-600">
+                      Barcode
+                    </label>
+                    <input
+                      value={item.barcode}
+                      onChange={(e) => update(i, "barcode", e.target.value)}
+                      className="w-full rounded-lg border px-3 py-2 text-sm focus:border-black focus:outline-none"
+                      placeholder="e.g. BRC123"
+                    />
+                  </div>
 
-                <input
-                  placeholder="Quantity"
-                  value={item.orderedQuantity}
-                  onChange={(e) =>
-                    update(i, "orderedQuantity", e.target.value)
-                  }
-                  className="border px-3 py-2 rounded-lg"
-                />
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-600">
+                      Quantity
+                    </label>
+                    <input
+                      type="number"
+                      value={item.orderedQuantity}
+                      onChange={(e) =>
+                        update(i, "orderedQuantity", e.target.value)
+                      }
+                      className="w-full rounded-lg border px-3 py-2 text-sm focus:border-black focus:outline-none"
+                      placeholder="0"
+                    />
+                  </div>
 
-                <input
-                  placeholder="Selling Price"
-                  value={item.sellingPrice}
-                  onChange={(e) =>
-                    update(i, "sellingPrice", e.target.value)
-                  }
-                  className="border px-3 py-2 rounded-lg"
-                />
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-600">
+                      Selling Price
+                    </label>
+                    <input
+                      type="number"
+                      value={item.sellingPrice}
+                      onChange={(e) =>
+                        update(i, "sellingPrice", e.target.value)
+                      }
+                      className="w-full rounded-lg border px-3 py-2 text-sm focus:border-black focus:outline-none"
+                      placeholder="₹0.00"
+                    />
+                  </div>
+                </div>
+
+                {/* Delete button */}
+                {items.length > 1 && (
+                  <button
+                    onClick={() => removeItem(i)}
+                    className="
+          mt-6
+          rounded-lg
+          border border-gray-200
+          bg-white
+          p-2
+          text-gray-400
+          
+          hover:border-red-300
+          hover:bg-red-50
+          hover:text-red-600
+          group-hover:opacity-100
+        "
+                    title="Remove item"
+                  >
+                    <TrashIcon />
+                  </button>
+                )}
               </div>
 
-              {item.error != "OK" && (
-                <p className="text-sm text-red-600 font-medium">
+              {item.error && (
+                <p className="mt-2 text-sm font-medium text-red-600">
                   {item.error}
                 </p>
               )}
             </div>
           ))}
         </div>
-          
-        {createdOrderId && (
-          <div className="mt-5 p-4 border border-green-200 bg-green-50 rounded-xl flex justify-between items-center">
-            <div>
-              <p className="font-medium text-green-800">Order created successfully</p>
-              <p className="text-sm text-green-600">
-                You can now download the invoice
-              </p>
-            </div>
 
-            <button
-              onClick={() => downloadInvoice(createdOrderId)}
-              className="text-blue-600 hover:underline text-sm hover:cursor-pointer"
-            >
-              Download invoice
-            </button>
+        {/* Success */}
+        {createdOrderId && (
+          <div className="mx-6 mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-green-800">
+                  Order placed successfully
+                </p>
+                <p className="text-sm text-green-600">
+                  Download the invoice for this order
+                </p>
+              </div>
+
+              <button
+                onClick={() => downloadInvoice(createdOrderId)}
+                className="rounded-lg border border-green-300 bg-white px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-100"
+              >
+                Download invoice
+              </button>
+            </div>
           </div>
         )}
 
-
         {/* Footer */}
-        <div className="flex justify-between items-center mt-6">
+        <div className="flex items-center justify-between border-t px-6 py-4">
           <button
             onClick={addItem}
-            className="text-sm text-blue-600 hover:underline hover:cursor-pointer"
+            className="text-sm font-medium text-blue-600 hover:underline"
           >
             + Add another item
           </button>
@@ -220,14 +235,14 @@ export default function CreateOrderModal({
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 border rounded-lg hover:bg-gray-50 hover:cursor-pointer"
+              className="rounded-lg border px-4 py-2 text-sm hover:bg-gray-50"
             >
               Cancel
             </button>
 
             <button
               onClick={handleSubmit}
-              className="px-5 py-2 bg-black text-white rounded-lg hover:bg-gray-900 hover:cursor-pointer"
+              className="rounded-lg bg-black px-5 py-2 text-sm font-medium text-white hover:bg-gray-900"
             >
               Submit Order
             </button>
@@ -235,5 +250,5 @@ export default function CreateOrderModal({
         </div>
       </div>
     </div>
-  )
+  );
 }

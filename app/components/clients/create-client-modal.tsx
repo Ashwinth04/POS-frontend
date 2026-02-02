@@ -1,37 +1,54 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { addClient } from "../../lib/client-api"
-import { Client } from "../../types/client"
-import {toast} from "sonner"
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { addClient } from "../../lib/client-api";
+import { Client } from "../../types/client";
+import { toast } from "sonner";
 
-export default function CreateClientModal({ onCreated }: { onCreated: (c: Client) => void }) {
-  const [open, setOpen] = useState(false)
+export default function CreateClientModal({
+  onCreated,
+}: {
+  onCreated: (c: Client) => void;
+}) {
+  const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
     location: "",
-    phoneNumber: ""
-  })
+    phoneNumber: "",
+  });
+
+  const fields = [
+    { key: "name", label: "Name" },
+    { key: "email", label: "Email" },
+    { key: "location", label: "Location" },
+    { key: "phoneNumber", label: "Phone number" },
+  ];
 
   async function handleSubmit() {
     try {
-        const newClient = await addClient(form)
-        onCreated(newClient)
-        setOpen(false)
-        setForm({ name: "", email: "", location: "", phoneNumber: "" })
-        toast.success("Client added succesfully!")
+      const newClient = await addClient(form);
+      onCreated(newClient);
+      setOpen(false);
+      setForm({ name: "", email: "", location: "", phoneNumber: "" });
+      toast.success("Client added succesfully!");
     } catch (err: any) {
-        console.log(err.message)
-        toast.error(JSON.parse(err.message).message)
+      console.log(err.message);
+      toast.error(JSON.parse(err.message).message, {
+        duration: Infinity,
+        closeButton: true,
+      });
     }
-    
   }
 
   return (
@@ -46,19 +63,30 @@ export default function CreateClientModal({ onCreated }: { onCreated: (c: Client
         </DialogHeader>
 
         <div className="space-y-3">
-          {["name", "email", "location", "phoneNumber"].map((field) => (
-            <div key={field}>
-              <Label>{field}</Label>
+          {fields.map((field) => (
+            <div key={field.key} className="flex flex-col gap-2">
+              <Label className="flex items-center gap-1">
+                {field.label}
+                <span className="text-red-500">*</span>
+              </Label>
+
               <Input
-                value={(form as any)[field]}
-                onChange={(e) => setForm({ ...form, [field]: e.target.value })}
+                value={(form as any)[field.key]}
+                onChange={(e) =>
+                  setForm({ ...form, [field.key]: e.target.value })
+                }
               />
             </div>
           ))}
         </div>
 
-        <Button onClick={handleSubmit} className="w-full mt-4 hover:cursor-pointer">Create</Button>
+        <Button
+          onClick={handleSubmit}
+          className="w-full mt-4 hover:cursor-pointer"
+        >
+          Create
+        </Button>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

@@ -30,5 +30,5 @@ export default function OrderItems({ items }: { items: any[] }) {
         </tbody>
       </table>
     </div>
-  )
+  );
 }
