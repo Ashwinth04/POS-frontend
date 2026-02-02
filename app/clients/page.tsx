@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { fetchClients } from "../lib/client-api";
 import { Client } from "../types/client";
-import ClientTable from "../components/clients/client-table";
-import CreateClientModal from "../components/clients/create-client-modal";
+import ClientTable from "../../components/clients/client-table";
+import CreateClientModal from "../../components/clients/create-client-modal";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
-import AuthGuard from "../components/AuthGuard";
-import { PaginationControl } from "../components/pagination-controls";
+import AuthGuard from "../../components/AuthGuard";
+import { PaginationControl } from "../../components/pagination-controls";
 
 type PageResponse = {
   content: Client[];
@@ -148,21 +148,29 @@ export default function ClientsPage() {
           </Button>
         </div>
 
-        {/* Table */}
-        <div className="rounded-xl border bg-background shadow-sm">
-          <ClientTable
-            clients={clients}
-            setClients={setClients}
-            canEdit={isSupervisor}
-          />
+        <div className="flex flex-col min-h-[calc(100vh-250px)]">
+          {/* Table (natural height only) */}
+          <div className="rounded-xl border bg-background shadow-sm">
+            <ClientTable
+              clients={clients}
+              setClients={setClients}
+              canEdit={isSupervisor}
+            />
+          </div>
+
+          {/* Spacer that absorbs extra height */}
+          <div className="flex-1" />
+
+          {/* Pagination */}
+          <div>
+            <PaginationControl
+              page={page}
+              totalPages={totalPages}
+              onPageChange={(p) => loadPage(p, isSearching)}
+            />
+          </div>
         </div>
 
-        {/* Pagination */}
-        <PaginationControl
-          page={page}
-          totalPages={totalPages}
-          onPageChange={(p) => loadPage(p, isSearching)}
-        />
       </div>
     </AuthGuard>
   );

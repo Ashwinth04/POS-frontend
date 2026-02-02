@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { uploadTSV } from "../../lib/product-api";
+import { uploadTSV } from "../../app/lib/product-api";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

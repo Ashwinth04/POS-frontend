@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Order } from "../../types/order";
-import { editOrder } from "../../lib/order-api";
+import { Order } from "../../app/types/order";
+import { editOrder } from "../../app/lib/order-api";
 import { toast } from "sonner";
-import { formatMoney } from "../../lib/money";
+import { formatMoney } from "../../app/lib/money";
 
 type EditableItem = {
   barcode: string;

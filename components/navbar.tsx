@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { getCachedUser, saveUser, clearUser } from "../lib/auth-cache";
+import { getCachedUser, saveUser, clearUser } from "../app/lib/auth-cache";
 
 type User = {
   userId: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addProduct } from "../../lib/product-api";
+import { addProduct } from "../../app/lib/product-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {

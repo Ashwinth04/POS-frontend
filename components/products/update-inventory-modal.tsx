@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { updateInventory } from "../../lib/inventory-api";
+import { updateInventory } from "../../app/lib/inventory-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {

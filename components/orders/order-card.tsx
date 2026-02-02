@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Order } from "../../types/order";
+import { Order } from "../../app/types/order";
 import { toast } from "sonner";
 import {
   cancelOrder,
   generateInvoice,
   downloadInvoice,
-} from "../../lib/order-api";
-import { downloadBase64Pdf } from "../../lib/file";
-import { formatMoney } from "../../lib/money";
+} from "../../app/lib/order-api";
+import { downloadBase64Pdf } from "../../app/lib/file";
+import { formatMoney } from "../../app/lib/money";
 import EditOrderModal from "./edit-order-modal";
 import ConfirmActionModal from "../confirm-action-modal";
 

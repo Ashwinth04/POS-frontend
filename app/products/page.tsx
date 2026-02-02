@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import { fetchProducts } from "../lib/product-api";
 import { Product } from "../types/product";
-import ProductCard from "../components/products/product-card";
-import AddProductModal from "../components/products/add-product-modal";
-import BulkUploadModal from "../components/bulk-upload-modal";
+import ProductCard from "../../components/products/product-card";
+import AddProductModal from "../../components/products/add-product-modal";
+import BulkUploadModal from "../../components/bulk-upload-modal";
 import { uploadInventoryTSV, uploadProductTSV } from "../lib/bulk-upload-api";
 
-import AuthGuard from "../components/AuthGuard";
-import { PaginationControl } from "../components/pagination-controls";
+import AuthGuard from "../../components/AuthGuard";
+import { PaginationControl } from "../../components/pagination-controls";
 
 type SearchType = "name" | "barcode";
 
@@ -169,19 +169,26 @@ export default function ProductsPage() {
           </button>
         </div>
 
-        {/* Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} canEdit={isSupervisor} />
-          ))}
+        <div className="flex flex-col min-h-[calc(100vh-120px)]">
+          {/* Product Grid */}
+          <div className="flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {products.map((p) => (
+                <ProductCard key={p.id} product={p} canEdit={isSupervisor} />
+              ))}
+            </div>
+          </div>
+
+          {/* Pagination */}
+          <div className="mt-6">
+            <PaginationControl
+              page={page}
+              totalPages={totalPages}
+              onPageChange={load}
+            />
+          </div>
         </div>
 
-        {/* Pagination */}
-        <PaginationControl
-          page={page}
-          totalPages={totalPages}
-          onPageChange={load}
-        />
       </div>
     </AuthGuard>
   );

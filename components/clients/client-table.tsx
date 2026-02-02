@@ -1,6 +1,6 @@
 "use client";
 
-import { Client } from "../../types/client";
+import { Client } from "../../app/types/client";
 import EditClientModal from "./edit-client-modal";
 import {
   Table,

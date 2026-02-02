@@ -1,4 +1,4 @@
-import { Product } from "../../types/product";
+import { Product } from "../../app/types/product";
 import UpdateInventoryModal from "./update-inventory-modal";
 import ImagePreview from "./image-preview-dialog";
 import EditProductModal from "./edit-product-modal";

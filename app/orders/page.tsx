@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { fetchOrders, fetchFilteredOrders } from "../lib/order-api";
 import { Order } from "../types/order";
-import OrderCard from "../components/orders/order-card";
-import CreateOrderModal from "../components/orders/create-order-modal";
+import OrderCard from "../../components/orders/order-card";
+import CreateOrderModal from "../../components/orders/create-order-modal";
 import {
   Pagination,
   PaginationContent,
@@ -13,7 +13,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import AuthGuard from "../components/AuthGuard";
+import AuthGuard from "../../components/AuthGuard";
 import { format } from "date-fns";
 import {
   Popover,
@@ -29,7 +29,7 @@ import {
   ChevronRight,
   ChevronsRight,
 } from "lucide-react";
-import { PaginationControl } from "../components/pagination-controls";
+import { PaginationControl } from "../../components/pagination-controls";
 
 type PageResponse = {
   content: Order[];

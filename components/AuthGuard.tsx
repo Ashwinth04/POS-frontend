@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentUser } from "../lib/auth";
-import { getCachedUser, saveUser, clearUser } from "../lib/auth-cache";
+import { getCurrentUser } from "../app/lib/auth";
+import { getCachedUser, saveUser, clearUser } from "../app/lib/auth-cache";
 
 export default function AuthGuard({
   children,

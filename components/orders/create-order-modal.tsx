@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createOrder, getInvoice } from "../../lib/order-api";
+import { createOrder, getInvoice } from "../../app/lib/order-api";
 import { toast } from "sonner";
 
 type Item = {

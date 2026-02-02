@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import OperatorsTable from "@/app/components/admin/operators-table";
+import OperatorsTable from "@/components/admin/operators-table";
 
 type User = {
   userId: string;

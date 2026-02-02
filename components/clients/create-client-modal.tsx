@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { addClient } from "../../lib/client-api";
-import { Client } from "../../types/client";
+import { addClient } from "../../app/lib/client-api";
+import { Client } from "../../app/types/client";
 import { toast } from "sonner";
 
 export default function CreateClientModal({

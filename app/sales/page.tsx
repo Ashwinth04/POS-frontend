@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import SalesFilters from "../components/sales/sales-filters";
-import SalesSummaryCards from "../components/sales/sales-summary-cards";
-import ClientDetailsModal from "../components/sales/client-details-modal";
+import SalesFilters from "../../components/sales/sales-filters";
+import SalesSummaryCards from "../../components/sales/sales-summary-cards";
+import ClientDetailsModal from "../../components/sales/client-details-modal";
 
 import {
   Table,
@@ -19,7 +19,7 @@ import {
   getClientSales,
   getDailySales,
 } from "../lib/sales-api";
-import { PaginationControl } from "../components/pagination-controls";
+import { PaginationControl } from "../../components/pagination-controls";
 
 export default function SalesPage() {
   const [startDate, setStartDate] = useState<Date>();
