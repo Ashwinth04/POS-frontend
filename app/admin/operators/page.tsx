@@ -23,6 +23,7 @@ export default function OperatorsPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Protect page (Supervisor only)
   useEffect(() => {
@@ -57,14 +58,11 @@ export default function OperatorsPage() {
   }, []);
 
   async function handleCreate() {
-    setMessage("");
-
     if (!username || !password) {
-      toast.error("Something went wrong", {
-        duration: Infinity, // 👈 stays forever
-        closeButton: true, // 👈 only for failures
+      toast.error("Username and password required", {
+        duration: Infinity,
+        closeButton: true,
       });
-
       return;
     }
 
@@ -72,27 +70,24 @@ export default function OperatorsPage() {
       const res = await fetch("http://localhost:8080/auth/create-operator", {
         method: "POST",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        toast.error(text || "Failed to create operator", {
+        toast.error(await res.text(), {
           duration: Infinity,
           closeButton: true,
         });
         return;
       }
 
-      // Add locally (since backend has no list endpoint)
-      setOperators((prev) => [...prev, { username, active: true }]);
-
       setUsername("");
       setPassword("");
-      toast.success("Operator created successfully");
+      toast.success("Operator created");
+
+      setRefreshKey((k) => k + 1);
+
     } catch {
       toast.error("Server error", {
         duration: Infinity,
@@ -100,6 +95,7 @@ export default function OperatorsPage() {
       });
     }
   }
+
 
   function handleRevoke(index: number) {
     setOperators((prev) =>
@@ -147,9 +143,8 @@ export default function OperatorsPage() {
 
         {message && (
           <p
-            className={`text-sm ${
-              message.includes("success") ? "text-green-600" : "text-red-600"
-            }`}
+            className={`text-sm ${message.includes("success") ? "text-green-600" : "text-red-600"
+              }`}
           >
             {message}
           </p>
@@ -157,7 +152,7 @@ export default function OperatorsPage() {
       </div>
 
       {/* Operators Table */}
-      <OperatorsTable />
+      <OperatorsTable refreshKey={refreshKey} />
     </div>
   );
 }

@@ -143,7 +143,7 @@ export default function OrderCard({
                   }}
                   className="border px-4 py-2 rounded-lg hover:bg-gray-50"
                 >
-                  Edit Order
+                  {order.orderStatus === "FULFILLABLE" ? "Edit Order" : "Retry Order"}
                 </button>
 
                 <button

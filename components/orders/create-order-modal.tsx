@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createOrder, getInvoice } from "../../app/lib/order-api";
 import { toast } from "sonner";
 
@@ -54,6 +54,8 @@ export default function CreateOrderModal({ onClose }: { onClose: () => void }) {
     { barcode: "", orderedQuantity: "", sellingPrice: "" },
   ]);
 
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
   function addItem() {
     setItems([
       ...items,
@@ -72,6 +74,18 @@ export default function CreateOrderModal({ onClose }: { onClose: () => void }) {
     setItems(copy);
   }
 
+  /* ---------------- auto scroll ---------------- */
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    el.scrollTo({
+      top: el.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [items.length]);
+
   async function handleSubmit() {
     try {
       const payload = items.map((i) => ({
@@ -84,6 +98,7 @@ export default function CreateOrderModal({ onClose }: { onClose: () => void }) {
 
       toast.success("Order created successfully");
       setCreatedOrderId(res.orderId);
+      onClose();
     } catch (e: any) {
       toast.error(e.message || "Something went wrong", {
         duration: Infinity,
@@ -94,9 +109,9 @@ export default function CreateOrderModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-[760px] max-h-[90vh] overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div className="w-[760px] max-h-[90vh] overflow-hidden rounded-2xl bg-white shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between border-b px-6 py-4">
+        <div className="flex items-center justify-between border-b px-6 py-4 shrink-0">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">
               Create Order
@@ -114,8 +129,11 @@ export default function CreateOrderModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {/* Items */}
-        <div className="max-h-[420px] space-y-4 overflow-y-scroll px-6 py-5">
+        {/* Items (scrollable) */}
+        <div
+          ref={scrollRef}
+          className="max-h-[420px] space-y-4 overflow-y-auto px-6 py-5"
+        >
           {items.map((item, i) => (
             <div
               key={i}
@@ -167,23 +185,11 @@ export default function CreateOrderModal({ onClose }: { onClose: () => void }) {
                   </div>
                 </div>
 
-                {/* Delete button */}
+                {/* Delete */}
                 {items.length > 1 && (
                   <button
                     onClick={() => removeItem(i)}
-                    className="
-          mt-6
-          rounded-lg
-          border border-gray-200
-          bg-white
-          p-2
-          text-gray-400
-          
-          hover:border-red-300
-          hover:bg-red-50
-          hover:text-red-600
-          group-hover:opacity-100
-        "
+                    className="mt-6 rounded-lg border border-gray-200 bg-white p-2 text-gray-400 hover:border-red-300 hover:bg-red-50 hover:text-red-600"
                     title="Remove item"
                   >
                     <TrashIcon />
@@ -200,31 +206,8 @@ export default function CreateOrderModal({ onClose }: { onClose: () => void }) {
           ))}
         </div>
 
-        {/* Success */}
-        {createdOrderId && (
-          <div className="mx-6 mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-green-800">
-                  Order placed successfully
-                </p>
-                <p className="text-sm text-green-600">
-                  Download the invoice for this order
-                </p>
-              </div>
-
-              <button
-                onClick={() => downloadInvoice(createdOrderId)}
-                className="rounded-lg border border-green-300 bg-white px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-100"
-              >
-                Download invoice
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Footer */}
-        <div className="flex items-center justify-between border-t px-6 py-4">
+        <div className="flex items-center justify-between border-t px-6 py-4 shrink-0">
           <button
             onClick={addItem}
             className="text-sm font-medium text-blue-600 hover:underline"

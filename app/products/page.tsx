@@ -174,7 +174,12 @@ export default function ProductsPage() {
           <div className="flex-1">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {products.map((p) => (
-                <ProductCard key={p.id} product={p} canEdit={isSupervisor} />
+                <ProductCard 
+                key={p.id} 
+                product={p} 
+                canEdit={isSupervisor}
+                onUpdated={() => load(page)}
+                 />
               ))}
             </div>
           </div>

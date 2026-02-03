@@ -65,9 +65,9 @@ export default function CreateClientModal({
         <div className="space-y-3">
           {fields.map((field) => (
             <div key={field.key} className="flex flex-col gap-2">
-              <Label className="flex items-center gap-1">
+              <Label className="flex items-center">
                 {field.label}
-                <span className="text-red-500">*</span>
+                <span className="ml-0.5 text-red-500">*</span>
               </Label>
 
               <Input

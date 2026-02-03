@@ -15,6 +15,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export default function AddProductModal({ onAdded }: { onAdded: () => void }) {
+  const [open, setOpen] = useState(false);
+
   const [form, setForm] = useState({
     barcode: "",
     clientName: "",
@@ -33,10 +35,26 @@ export default function AddProductModal({ onAdded }: { onAdded: () => void }) {
         return;
       }
 
-      await addProduct({ ...form, mrp: Number(form.mrp) });
+      await addProduct({
+        ...form, mrp: Number(form.mrp),
+        quantity: 0
+      });
+
+      toast.success("Product added successfully");
+
       onAdded();
+      setOpen(false); // ✅ close modal
+
+      // optional: reset form
+      setForm({
+        barcode: "",
+        clientName: "",
+        name: "",
+        mrp: "",
+        imageUrl: "",
+      });
     } catch (err: any) {
-      toast.error(err.message, {
+      toast.error(err.message || "Something went wrong", {
         duration: Infinity,
         closeButton: true,
       });
@@ -52,7 +70,7 @@ export default function AddProductModal({ onAdded }: { onAdded: () => void }) {
   ] as const;
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="hover:cursor-pointer">Add Product</Button>
       </DialogTrigger>
@@ -73,7 +91,9 @@ export default function AddProductModal({ onAdded }: { onAdded: () => void }) {
               <Input
                 placeholder={label}
                 value={form[key]}
-                onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, [key]: e.target.value })
+                }
               />
             </div>
           ))}

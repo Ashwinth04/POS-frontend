@@ -1,16 +1,26 @@
 const BASE = "http://localhost:8080/api/orders";
 
 async function handleResponse(res: Response) {
-  const text = await res.text();
-  try {
-    const json = JSON.parse(text);
-    if (!res.ok) throw new Error(json.message || "Something went wrong");
-    return json;
-  } catch {
-    if (!res.ok) throw new Error(text || "Something went wrong");
-    return text;
+  const contentType = res.headers.get("content-type");
+
+  let data: any;
+  if (contentType?.includes("application/json")) {
+    data = await res.json();
+  } else {
+    data = await res.text();
   }
+
+  if (!res.ok) {
+    const message =
+      typeof data === "string"
+        ? data
+        : data?.message || "Something went wrong";
+    throw new Error(message);
+  }
+
+  return data;
 }
+
 
 export async function getInvoice(orderId: string): Promise<Blob> {
   const res = await fetch(`${BASE}/${orderId}/invoice`, {

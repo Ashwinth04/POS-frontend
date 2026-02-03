@@ -41,7 +41,7 @@ export default function SalesFilters(props: Props) {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="p-0">
-                <Calendar mode="single" selected={date} onSelect={onChange} />
+                <Calendar mode="single" selected={date} onSelect={onChange} disabled={props.startDate ? { before: props.startDate } : undefined}/>
               </PopoverContent>
             </Popover>
           </div>

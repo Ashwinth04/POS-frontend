@@ -28,7 +28,7 @@ export default function ProductCard({
       <div className="absolute left-3 top-3 z-20 opacity-0 transition group-hover:opacity-100">
         <EditProductModal
           product={product}
-          onUpdated={(updated) => onUpdated?.(updated)}
+          onUpdated={(updated) => onUpdated?.(updated as Product)}
           trigger={
             canEdit && (
               <Button
@@ -93,7 +93,11 @@ export default function ProductCard({
             <UpdateInventoryModal
               barcode={product.barcode}
               productId={product.id}
+              onUpdated={(newQty) =>
+                onUpdated?.({ ...product, quantity: newQty })
+              }
             />
+
           </div>
         )}
       </CardContent>

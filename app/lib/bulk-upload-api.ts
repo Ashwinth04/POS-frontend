@@ -42,5 +42,5 @@ export function uploadProductTSV(base64file: string) {
    Inventory Bulk Upload
 -------------------------------- */
 export function uploadInventoryTSV(base64file: string) {
-  return bulkUpload(`${BASE}/inventory/bulkUpdate`, base64file);
+  return bulkUpload(`${BASE}/inventory/bulk-update`, base64file);
 }

@@ -47,7 +47,7 @@ export default function LoginPage() {
         {error && <div className="text-red-600 text-sm">{error}</div>}
 
         <input
-          placeholder="Username"
+          placeholder="email"
           className="w-full border p-2 rounded"
           value={username}
           onChange={(e) => setUsername(e.target.value)}

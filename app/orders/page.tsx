@@ -5,14 +5,6 @@ import { fetchOrders, fetchFilteredOrders } from "../lib/order-api";
 import { Order } from "../types/order";
 import OrderCard from "../../components/orders/order-card";
 import CreateOrderModal from "../../components/orders/create-order-modal";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import AuthGuard from "../../components/AuthGuard";
 import { format } from "date-fns";
 import {
@@ -23,12 +15,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Calendar as CalendarIcon } from "lucide-react";
-import {
-  ChevronsLeft,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsRight,
-} from "lucide-react";
 import { PaginationControl } from "../../components/pagination-controls";
 
 type PageResponse = {

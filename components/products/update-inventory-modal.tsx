@@ -19,9 +19,11 @@ const MAX_QTY = 100000;
 export default function UpdateInventoryModal({
   barcode,
   productId,
+  onUpdated,
 }: {
   barcode: string;
   productId: string;
+  onUpdated?: (quantity: number) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [qty, setQty] = useState<number | "">("");
@@ -34,10 +36,16 @@ export default function UpdateInventoryModal({
 
     try {
       setLoading(true);
+
       await updateInventory(productId, qty as number);
+
+      toast.success("Inventory updated successfully!");
+
+      // ✅ Notify parent immediately
+      onUpdated?.(qty as number);
+
       setOpen(false);
       setQty("");
-      toast.success("Inventory updated successfully!");
     } catch (err: any) {
       console.error(err);
       toast.error(
