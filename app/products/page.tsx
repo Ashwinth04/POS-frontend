@@ -23,7 +23,6 @@ export default function ProductsPage() {
 
   const [searchType, setSearchType] = useState<SearchType>("name");
   const [query, setQuery] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
 
   // Load current user role
   useEffect(() => {
@@ -51,21 +50,17 @@ export default function ProductsPage() {
       setProducts(data.content);
       setPage(data.number);
       setTotalPages(data.totalPages);
-      setIsSearching(false);
       return;
     }
 
-    const res = await fetch(
-      "http://localhost:8080/api/products/search?",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ type: searchType, query, page: p, size: 8 }),
-        credentials: "include",
+    const res = await fetch("http://localhost:8080/api/products/search?", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({ type: searchType, query, page: p, size: 8 }),
+      credentials: "include",
+    });
 
     if (!res.ok) return;
 
@@ -73,7 +68,6 @@ export default function ProductsPage() {
     setProducts(data.content);
     setPage(data.number);
     setTotalPages(data.totalPages);
-    setIsSearching(true);
   }
 
   useEffect(() => {
@@ -103,6 +97,7 @@ export default function ProductsPage() {
                 uploadFn={uploadProductTSV}
                 successMessage="Products uploaded successfully"
                 triggerLabel="Bulk Upload Products"
+                onSuccess={() => load(0, true)}
               />
 
               <BulkUploadModal
@@ -111,6 +106,7 @@ export default function ProductsPage() {
                 uploadFn={uploadInventoryTSV}
                 successMessage="Inventory updated successfully"
                 triggerLabel="Bulk Upload Inventory"
+                onSuccess={() => load(0, true)}
               />
 
               <AddProductModal onAdded={() => load(0)} />
@@ -118,10 +114,8 @@ export default function ProductsPage() {
           )}
         </div>
 
-        {/* 🔍 Search Bar (Premium Look) */}
-        {/* 🔍 Search Controls */}
+        {/* Search Controls */}
         <div className="flex items-center gap-3 max-w-xl">
-          {/* Filter */}
           <select
             value={searchType}
             onChange={(e) => setSearchType(e.target.value as SearchType)}
@@ -131,7 +125,6 @@ export default function ProductsPage() {
             <option value="barcode">Barcode</option>
           </select>
 
-          {/* Search Input */}
           <input
             type="text"
             placeholder={`Search by ${searchType}`}
@@ -143,7 +136,6 @@ export default function ProductsPage() {
             className="flex-1 h-10 rounded-lg border border-input bg-background px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
 
-          {/* Search */}
           <button
             onClick={() => load(0)}
             className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition"
@@ -151,7 +143,6 @@ export default function ProductsPage() {
             Search
           </button>
 
-          {/* Clear */}
           <button
             onClick={() => {
               setQuery("");
@@ -159,29 +150,27 @@ export default function ProductsPage() {
             }}
             disabled={!query}
             className="h-10 px-4 rounded-lg border text-sm font-medium transition
-    disabled:opacity-50 disabled:cursor-not-allowed
-    hover:bg-muted"
+              disabled:opacity-50 disabled:cursor-not-allowed
+              hover:bg-muted"
           >
             Clear
           </button>
         </div>
 
         <div className="flex flex-col min-h-[calc(100vh-120px)]">
-          {/* Product Grid */}
           <div className="flex-1">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {products.map((p) => (
-                <ProductCard 
-                key={p.barcode} 
-                product={p} 
-                canEdit={isSupervisor}
-                onUpdated={() => load(page)}
-                 />
+                <ProductCard
+                  key={p.barcode}
+                  product={p}
+                  canEdit={isSupervisor}
+                  onUpdated={() => load(page)}
+                />
               ))}
             </div>
           </div>
 
-          {/* Pagination */}
           <div className="mt-6">
             <PaginationControl
               page={page}
@@ -190,7 +179,6 @@ export default function ProductsPage() {
             />
           </div>
         </div>
-
       </div>
     </AuthGuard>
   );

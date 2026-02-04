@@ -99,12 +99,13 @@ export default function BulkUploadModal({
 
       if (response.status === "SUCCESS") {
         toast.success(successMessage);
-        onSuccess?.();
+        
         setOpen(false);
         resetState();
         return;
       }
-
+      
+      onSuccess?.();
       // UNSUCCESSFUL → show result BELOW submit button
       if (response.base64file) {
         const decoded = atob(response.base64file);
