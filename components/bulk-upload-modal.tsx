@@ -86,7 +86,7 @@ export default function BulkUploadModal({
     try {
       setLoading(true);
 
-      // 👇 Count total rows from input file
+      // Count total rows
       const text = await fileToText(file);
       const inputLines = text.trim().split("\n");
       const totalRows = Math.max(inputLines.length - 1, 0);
@@ -105,12 +105,12 @@ export default function BulkUploadModal({
         return;
       }
 
-      // UNSUCCESSFUL → show result file + failed count
+      // UNSUCCESSFUL → show result BELOW submit button
       if (response.base64file) {
         const decoded = atob(response.base64file);
-
         const resultLines = decoded.trim().split("\n");
         const failedRows = Math.max(resultLines.length - 1, 0);
+
         setFailedCount(failedRows);
 
         const blob = new Blob([decoded], {
@@ -118,6 +118,12 @@ export default function BulkUploadModal({
         });
         const url = URL.createObjectURL(blob);
         setResultUrl(url);
+
+        // 👇 Clear file so user can upload again
+        setFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
       }
     } catch (err: any) {
       toast.error(err.message || "Upload failed", {
@@ -141,64 +147,58 @@ export default function BulkUploadModal({
         </DialogHeader>
 
         <div className="space-y-6">
-          {!resultUrl && (
-            <div className="rounded-lg border border-dashed p-4 text-sm">
-              <div className="flex items-center gap-2 font-medium">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                Download template
-              </div>
-              <p className="mt-1 text-muted-foreground">
-                Use this TSV template to ensure correct formatting.
-              </p>
-              <a
-                href={templateUrl}
-                download
-                className="mt-3 inline-flex items-center gap-2 text-blue-600 hover:underline"
-              >
-                <Download className="h-4 w-4" />
-                Download TSV template
-              </a>
+          {/* Template */}
+          <div className="rounded-lg border border-dashed p-4 text-sm">
+            <div className="flex items-center gap-2 font-medium">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              Download template
             </div>
-          )}
-
-          {!resultUrl && (
-            <div className="space-y-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".tsv"
-                hidden
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-              />
-
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="h-4 w-4" />
-                {file ? file.name : "Choose TSV file"}
-              </Button>
-
-              <p className="text-xs text-muted-foreground">
-                Only .tsv files are supported{" "}
-                <span className="text-red-500">
-                  (Maximum Limit: 5000 rows per file)
-                </span>
-              </p>
-            </div>
-          )}
-
-          {!resultUrl && (
-            <Button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="w-full"
+            <p className="mt-1 text-muted-foreground">
+              Use this TSV template to ensure correct formatting.
+            </p>
+            <a
+              href={templateUrl}
+              download
+              className="mt-3 inline-flex items-center gap-2 text-blue-600 hover:underline"
             >
-              {loading ? "Processing…" : "Upload & Process"}
-            </Button>
-          )}
+              <Download className="h-4 w-4" />
+              Download TSV template
+            </a>
+          </div>
 
+          {/* File picker */}
+          <div className="space-y-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".tsv"
+              hidden
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+            />
+
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="h-4 w-4" />
+              {file ? file.name : "Choose TSV file"}
+            </Button>
+
+            <p className="text-xs text-muted-foreground">
+              Only .tsv files are supported{" "}
+              <span className="text-red-500">
+                (Maximum Limit: 5000 rows per file)
+              </span>
+            </p>
+          </div>
+
+          {/* Submit */}
+          <Button onClick={handleSubmit} disabled={loading} className="w-full">
+            {loading ? "Processing…" : "Upload & Process"}
+          </Button>
+
+          {/* Failure result (shown ONLY on failure) */}
           {resultUrl && (
             <div className="rounded-lg border p-4 text-sm">
               <div className="flex items-center gap-2 font-medium">

@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import AuthGuard from "../../components/AuthGuard";
 import { PaginationControl } from "../../components/pagination-controls";
 
@@ -72,18 +72,17 @@ export default function ClientsPage() {
     }
 
     // Search pagination
-    const res = await fetch(
-      `http://localhost:8080/api/clients/search?type=${filter}&query=${search}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          page: p,
-          size: 9,
-        }),
-      },
-    );
+    const res = await fetch("http://localhost:8080/api/clients/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        type: filter,
+        query: search,
+        page: p,
+        size: 9,
+      }),
+    });
 
     if (!res.ok) return;
 
@@ -101,6 +100,12 @@ export default function ClientsPage() {
 
     setIsSearching(true);
     loadPage(0, true);
+  }
+
+  function handleClear() {
+    setSearch("");
+    setIsSearching(false);
+    loadPage(0, false);
   }
 
   if (loadingRole) return null;
@@ -146,10 +151,19 @@ export default function ClientsPage() {
           <Button onClick={handleSearch} className="px-4">
             <Search className="h-4 w-4" />
           </Button>
+
+          <Button
+            variant="outline"
+            onClick={handleClear}
+            disabled={!search.trim()}
+            className="px-4"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
 
         <div className="flex flex-col min-h-[calc(100vh-250px)]">
-          {/* Table (natural height only) */}
+          {/* Table */}
           <div className="rounded-xl border bg-background shadow-sm">
             <ClientTable
               clients={clients}
@@ -158,7 +172,7 @@ export default function ClientsPage() {
             />
           </div>
 
-          {/* Spacer that absorbs extra height */}
+          {/* Spacer */}
           <div className="flex-1" />
 
           {/* Pagination */}
@@ -170,7 +184,6 @@ export default function ClientsPage() {
             />
           </div>
         </div>
-
       </div>
     </AuthGuard>
   );

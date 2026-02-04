@@ -21,7 +21,6 @@ export default function ProductsPage() {
   const [isSupervisor, setIsSupervisor] = useState(false);
   const [loadingRole, setLoadingRole] = useState(true);
 
-  // 🔍 Search state
   const [searchType, setSearchType] = useState<SearchType>("name");
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -57,15 +56,13 @@ export default function ProductsPage() {
     }
 
     const res = await fetch(
-      `http://localhost:8080/api/products/search?type=${searchType}&query=${encodeURIComponent(
-        query,
-      )}`,
+      "http://localhost:8080/api/products/search?",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ page: p, size: 8 }),
+        body: JSON.stringify({ type: searchType, query, page: p, size: 8 }),
         credentials: "include",
       },
     );
@@ -175,7 +172,7 @@ export default function ProductsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {products.map((p) => (
                 <ProductCard 
-                key={p.id} 
+                key={p.barcode} 
                 product={p} 
                 canEdit={isSupervisor}
                 onUpdated={() => load(page)}

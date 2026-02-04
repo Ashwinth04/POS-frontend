@@ -22,11 +22,9 @@ const statusStyles: Record<string, string> = {
 
 export default function OrderCard({
   order,
-  onRetry,
   onRefresh,
 }: {
   order: Order;
-  onRetry: (order: Order) => void;
   onRefresh: () => void;
 }) {
   const [open, setOpen] = useState(false);

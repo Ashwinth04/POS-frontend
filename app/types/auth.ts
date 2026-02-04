@@ -1,4 +1,4 @@
 export type User = {
-  userId: string;
+  email: string;
   role: "ROLE_SUPERVISOR" | "ROLE_OPERATOR";
 };

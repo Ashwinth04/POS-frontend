@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { PaginationControl } from "../../components/pagination-controls";
+import { Input } from "@/components/ui/input";
 
 type PageResponse = {
   content: Order[];
@@ -27,23 +28,25 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [filter, setFilter] = useState<"ALL" | "FULFILLABLE" | "UNFULFILLABLE">(
-    "ALL",
-  );
+
+  const [filter, setFilter] = useState<
+    "ALL" | "FULFILLABLE" | "UNFULFILLABLE"
+  >("ALL");
+
   const [open, setOpen] = useState(false);
   const [retryOrder, setRetryOrder] = useState<Order | null>(null);
 
+  // date filters
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
 
-  const MAX_PAGES = 5;
+  // 🔍 order id search
+  const [orderId, setOrderId] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
-  const startPage = Math.max(
-    0,
-    Math.min(page - Math.floor(MAX_PAGES / 2), totalPages - MAX_PAGES),
-  );
+  type Mode = "DEFAULT" | "SEARCH" | "DATE_FILTER";
+  const [mode, setMode] = useState<Mode>("DEFAULT");
 
-  const endPage = Math.min(totalPages, startPage + MAX_PAGES);
 
   useEffect(() => {
     loadUnfiltered(0);
@@ -56,55 +59,137 @@ export default function OrdersPage() {
     setTotalPages(data.totalPages);
   }
 
-  async function loadPage(p: number) {
-    try {
-      let data: PageResponse;
+  async function searchByOrderId(p: number) {
+    const res = await fetch(
+      "http://localhost:8080/api/orders/search-by-id",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          page: p,
+          size: 6,
+        }),
+        credentials: "include"
+      },
+    );
 
-      if (startDate && endDate) {
-        const startPlusOne = new Date(startDate);
-        startPlusOne.setDate(startPlusOne.getDate() + 1);
-
-        const endPlusOne = new Date(endDate);
-        endPlusOne.setDate(endPlusOne.getDate() + 1);
-
-        const start = startPlusOne.toISOString().split("T")[0];
-        const end = endPlusOne.toISOString().split("T")[0];
-
-        data = await fetchFilteredOrders(p, 6, start, end);
-      } else {
-        data = await fetchOrders(p, 6);
-      }
-
-      setOrders(data.content);
-      setPage(data.number);
-      setTotalPages(data.totalPages);
-    } catch (e: any) {
-      alert(e.message);
+    if (!res.ok) {
+      throw new Error("Failed to search order");
     }
+
+    const data = await res.json();
+    setOrders(data.content);
+    setPage(data.number);
+    setTotalPages(data.totalPages);
   }
+
+  async function loadPage(p: number) {
+  try {
+    let data: PageResponse;
+
+    if (mode === "SEARCH") {
+      await searchByOrderId(p);
+      return;
+    }
+
+    if (mode === "DATE_FILTER" && startDate && endDate) {
+      const startPlusOne = new Date(startDate);
+      startPlusOne.setDate(startPlusOne.getDate() + 1);
+
+      const endPlusOne = new Date(endDate);
+      endPlusOne.setDate(endPlusOne.getDate() + 1);
+
+      const start = startPlusOne.toISOString().split("T")[0];
+      const end = endPlusOne.toISOString().split("T")[0];
+
+      data = await fetchFilteredOrders(p, 6, start, end);
+    } else {
+      data = await fetchOrders(p, 6);
+    }
+
+    setOrders(data.content);
+    setPage(data.number);
+    setTotalPages(data.totalPages);
+  } catch (e: any) {
+    alert(e.message);
+  }
+}
+
 
   function formatDate(date?: Date) {
     return date ? format(date, "dd MMM yyyy") : "Select date";
   }
 
   const visible =
-    filter === "ALL" ? orders : orders.filter((o) => o.orderStatus === filter);
+    filter === "ALL"
+      ? orders
+      : orders.filter((o) => o.orderStatus === filter);
+
+  const dateFilterActive = startDate || endDate;
 
   return (
     <AuthGuard allowedRoles={["ROLE_SUPERVISOR", "ROLE_OPERATOR"]}>
       <div className="space-y-6">
-        {/* Header row */}
+        {/* Header */}
         <div className="flex justify-between items-center">
-          {/* Left: title + date filters */}
           <div className="flex items-center gap-6">
             <h1 className="text-2xl font-semibold">Orders</h1>
 
-            {/* Date filters */}
+            {/* 🔍 Search by order id */}
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Search by Order ID"
+                value={orderId}
+                disabled={!!dateFilterActive}
+                onChange={(e) => {
+                  setOrderId(e.target.value);
+                  if (startDate || endDate) {
+                    setStartDate(undefined);
+                    setEndDate(undefined);
+                  }
+                }}
+                className="w-64"
+              />
+
+              <Button
+  variant="secondary"
+  disabled={!orderId}
+  onClick={() => {
+    setMode("SEARCH");
+    setIsSearching(true);
+    loadPage(0);
+  }}
+>
+  Search
+</Button>
+
+
+              {isSearching && (
+                <Button
+  variant="ghost"
+  onClick={() => {
+    setOrderId("");
+    setIsSearching(false);
+    setMode("DEFAULT");
+    loadUnfiltered(0);
+  }}
+>
+  Clear
+</Button>
+
+              )}
+            </div>
+
+            {/* 📅 Date filters */}
             <div className="flex items-center gap-3">
-              {/* Start date */}
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="gap-2">
+                  <Button
+                    variant="outline"
+                    disabled={isSearching}
+                    className="gap-2"
+                  >
                     <CalendarIcon className="h-4 w-4" />
                     {formatDate(startDate)}
                   </Button>
@@ -113,15 +198,24 @@ export default function OrdersPage() {
                   <Calendar
                     mode="single"
                     selected={startDate}
-                    onSelect={setStartDate}
+                    onSelect={(d) => {
+                      setStartDate(d);
+                      if (orderId) {
+                        setOrderId("");
+                        setIsSearching(false);
+                      }
+                    }}
                   />
                 </PopoverContent>
               </Popover>
 
-              {/* End date */}
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="gap-2">
+                  <Button
+                    variant="outline"
+                    disabled={isSearching}
+                    className="gap-2"
+                  >
                     <CalendarIcon className="h-4 w-4" />
                     {formatDate(endDate)}
                   </Button>
@@ -130,40 +224,50 @@ export default function OrdersPage() {
                   <Calendar
                     mode="single"
                     selected={endDate}
-                    onSelect={setEndDate}
-                    disabled={startDate ? { before: startDate } : undefined}
+                    onSelect={(d) => {
+                      setEndDate(d);
+                      if (orderId) {
+                        setOrderId("");
+                        setIsSearching(false);
+                      }
+                    }}
+                    disabled={
+                      startDate ? { before: startDate } : undefined
+                    }
                   />
                 </PopoverContent>
               </Popover>
 
-              {/* Apply */}
               <Button
-                variant="secondary"
-                onClick={() => loadPage(0)}
-                disabled={!startDate || !endDate}
-                className="hover:bg-black hover:text-white hover:cursor-pointer"
-              >
-                Apply
-              </Button>
+  variant="secondary"
+  disabled={!startDate || !endDate || isSearching}
+  onClick={() => {
+    setMode("DATE_FILTER");
+    loadPage(0);
+  }}
+>
+  Apply
+</Button>
 
-              {/* Clear */}
+
               {(startDate || endDate) && (
                 <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setStartDate(undefined);
-                    setEndDate(undefined);
-                    loadUnfiltered(0);
-                  }}
-                  className="hover:cursor-pointer"
-                >
-                  Clear
-                </Button>
+  variant="ghost"
+  onClick={() => {
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setMode("DEFAULT");
+    loadUnfiltered(0);
+  }}
+>
+  Clear
+</Button>
+
               )}
             </div>
           </div>
 
-          {/* Right: status filter + create */}
+          {/* Right controls */}
           <div className="flex gap-3">
             <select
               value={filter}
@@ -179,7 +283,7 @@ export default function OrdersPage() {
 
             <button
               onClick={() => setOpen(true)}
-              className="bg-black text-white px-4 py-2 rounded-lg hover:cursor-pointer"
+              className="bg-black text-white px-4 py-2 rounded-lg"
             >
               + Create Order
             </button>
@@ -192,10 +296,6 @@ export default function OrdersPage() {
             <OrderCard
               key={i}
               order={order}
-              onRetry={(order) => {
-                setRetryOrder(order);
-                setOpen(true);
-              }}
               onRefresh={() => loadPage(page)}
             />
           ))}

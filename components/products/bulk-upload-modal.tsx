@@ -18,13 +18,18 @@ export default function BulkUploadModal() {
   const [file, setFile] = useState<File | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isErrorResult, setIsErrorResult] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function resetState() {
     setFile(null);
     setResultUrl(null);
+    setIsErrorResult(false);
     setLoading(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   }
 
   function handleOpenChange(value: boolean) {
@@ -52,25 +57,42 @@ export default function BulkUploadModal() {
 
     try {
       setLoading(true);
+      setResultUrl(null);
+      setIsErrorResult(false);
 
       const base64 = await fileToBase64(file);
       const cleanBase64 = base64.split(",")[1];
 
       const response = await uploadTSV(cleanBase64);
 
-      const decoded = atob(response.base64file);
-      const blob = new Blob([decoded], {
-        type: "text/tab-separated-values",
-      });
-      const url = URL.createObjectURL(blob);
-
-      setResultUrl(url);
+      // SUCCESS → close modal
       toast.success("File processed successfully");
+      setOpen(false);
+      resetState();
     } catch (err: any) {
+      // FAILURE → show result inside modal
+      try {
+        const decoded = atob(err?.response?.base64file || err?.base64file);
+        const blob = new Blob([decoded], {
+          type: "text/tab-separated-values",
+        });
+        const url = URL.createObjectURL(blob);
+        setResultUrl(url);
+        setIsErrorResult(true);
+      } catch {
+        // ignore decode errors
+      }
+
       toast.error(err.message || "Upload failed", {
         duration: Infinity,
         closeButton: true,
       });
+
+      // clear file so user can re-upload
+      setFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     } finally {
       setLoading(false);
     }
@@ -88,79 +110,73 @@ export default function BulkUploadModal() {
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* TEMPLATE DOWNLOAD (only before submit) */}
-          {!resultUrl && (
-            <div className="rounded-lg border border-dashed p-4 text-sm">
-              <div className="flex items-center gap-2 font-medium">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                Download template
-              </div>
-              <p className="mt-1 text-muted-foreground">
-                Use this TSV template to ensure correct formatting.
-              </p>
-              <a
-                href="/templates/products-bulk-upload-template.tsv"
-                download
-                className="mt-3 inline-flex items-center gap-2 text-blue-600 hover:underline"
-              >
-                <Download className="h-4 w-4" />
-                Download TSV template
-              </a>
+          {/* TEMPLATE DOWNLOAD */}
+          <div className="rounded-lg border border-dashed p-4 text-sm">
+            <div className="flex items-center gap-2 font-medium">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              Download template
             </div>
-          )}
+            <p className="mt-1 text-muted-foreground">
+              Use this TSV template to ensure correct formatting.
+            </p>
+            <a
+              href="/templates/products-bulk-upload-template.tsv"
+              download
+              className="mt-3 inline-flex items-center gap-2 text-blue-600 hover:underline"
+            >
+              <Download className="h-4 w-4" />
+              Download TSV template
+            </a>
+          </div>
 
           {/* FILE PICKER */}
-          {!resultUrl && (
-            <div className="space-y-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".tsv"
-                hidden
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-              />
+          <div className="space-y-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".tsv"
+              hidden
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+            />
 
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="h-4 w-4" />
-                {file ? file.name : "Choose TSV file"}
-              </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="h-4 w-4" />
+              {file ? file.name : "Choose TSV file"}
+            </Button>
 
-              <p className="text-xs text-muted-foreground">
-                Only .tsv files are supported
-              </p>
-            </div>
-          )}
+            <p className="text-xs text-muted-foreground">
+              Only .tsv files are supported
+            </p>
+          </div>
 
           {/* SUBMIT */}
-          {!resultUrl && (
-            <Button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="w-full"
-            >
-              {loading ? "Processing…" : "Upload & Process"}
-            </Button>
-          )}
+          <Button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full"
+          >
+            {loading ? "Processing…" : "Upload & Process"}
+          </Button>
 
-          {/* RESULT DOWNLOAD */}
-          {resultUrl && (
-            <div className="rounded-lg border p-4 text-sm">
-              <div className="flex items-center gap-2 font-medium">
-                <FileText className="h-4 w-4 text-green-600" />
-                Product Upload Result
+          {/* FAILURE RESULT DOWNLOAD (below submit) */}
+          {isErrorResult && resultUrl && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm">
+              <div className="flex items-center gap-2 font-medium text-red-700">
+                <FileText className="h-4 w-4" />
+                Upload Failed — Validation Errors
               </div>
-              <p className="mt-1 text-muted-foreground">
-                Download the result file containing validation outcomes.
+              <p className="mt-1 text-red-600">
+                Download the file to see which rows failed validation.
               </p>
 
               <a
                 href={resultUrl}
                 download="upload-result.tsv"
-                className="mt-3 inline-flex items-center gap-2 text-green-700 hover:underline"
+                className="mt-3 inline-flex items-center gap-2 text-red-700 hover:underline"
               >
                 <Download className="h-4 w-4" />
                 Download result file

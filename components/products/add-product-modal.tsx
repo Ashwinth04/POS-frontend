@@ -27,13 +27,13 @@ export default function AddProductModal({ onAdded }: { onAdded: () => void }) {
 
   async function handleSubmit() {
     try {
-      if (!form.mrp || isNaN(Number(form.mrp))) {
-        toast.error("MRP must be a valid number", {
-          duration: Infinity,
-          closeButton: true,
-        });
-        return;
-      }
+      // if (!form.mrp || isNaN(Number(form.mrp))) {
+      //   toast.error("MRP must be a valid number", {
+      //     duration: Infinity,
+      //     closeButton: true,
+      //   });
+      //   return;
+      // }
 
       await addProduct({
         ...form, mrp: Number(form.mrp),

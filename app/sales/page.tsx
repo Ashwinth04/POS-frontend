@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import SalesFilters from "../../components/sales/sales-filters";
 import SalesSummaryCards from "../../components/sales/sales-summary-cards";
 import ClientDetailsModal from "../../components/sales/client-details-modal";
+import { toast } from "sonner";
 
 import {
   Table,
@@ -50,15 +51,37 @@ export default function SalesPage() {
   }
 
   async function handleSubmit() {
-    if (!startDate || !endDate) {
-      loadDefault();
+    const hasStart = !!startDate;
+    const hasEnd = !!endDate;
+
+    // ❌ only one date selected
+    if (hasStart !== hasEnd) {
+      toast.error("Please select both start and end dates", {
+        duration: Infinity,
+        closeButton: true
+      });
       return;
     }
 
-    const s = startDate.toISOString().split("T")[0];
-    const e = endDate.toISOString().split("T")[0];
+    // client entered but no dates
+    if (clientName && !hasStart && !hasEnd) {
+      toast.error("Please select both start and end dates", {
+        duration: Infinity,
+        closeButton: true
+      });
+      return;
+    }
 
-    setRows([]); // 🔒 prevent stale render
+    // ✅ no filters → default view
+    if (!hasStart && !hasEnd) {
+      loadDefault(0);
+      return;
+    }
+
+    const s = startDate!.toISOString().split("T")[0];
+    const e = endDate!.toISOString().split("T")[0];
+
+    setRows([]); // prevent stale render
 
     if (clientName) {
       setMode("client");
@@ -75,6 +98,8 @@ export default function SalesPage() {
     setPage(0);
     setTotalPages(0);
   }
+
+
 
   function handleClear() {
     setStartDate(undefined);
@@ -123,9 +148,8 @@ export default function SalesPage() {
             {rows.map((r, i) => (
               <TableRow
                 key={i}
-                className={`h-9 hover:bg-muted/50 ${
-                  i % 2 === 0 ? "bg-muted/30" : ""
-                }`}
+                className={`h-9 hover:bg-muted/50 ${i % 2 === 0 ? "bg-muted/30" : ""
+                  }`}
               >
                 {mode === "default" && (
                   <TableCell className="py-2">

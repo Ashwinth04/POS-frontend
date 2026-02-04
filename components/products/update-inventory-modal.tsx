@@ -37,7 +37,7 @@ export default function UpdateInventoryModal({
     try {
       setLoading(true);
 
-      await updateInventory(productId, qty as number);
+      await updateInventory(barcode, qty as number);
 
       toast.success("Inventory updated successfully!");
 
@@ -79,6 +79,12 @@ export default function UpdateInventoryModal({
           <DialogDescription>
             Adjust the available stock for this product.
           </DialogDescription>
+
+          {/* ✅ Informational barcode display (non-interactive) */}
+          <div className="mt-2 text-sm text-muted-foreground">
+            <span className="font-medium">Barcode:</span>{" "}
+            <span className="font-mono text-foreground">{barcode}</span>
+          </div>
         </DialogHeader>
 
         <div className="space-y-4">

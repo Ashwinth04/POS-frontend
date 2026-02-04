@@ -1,35 +1,35 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { createOrder, getInvoice } from "../../app/lib/order-api";
+import {
+  useRef,
+  useState,
+  useLayoutEffect,
+} from "react";
+import { createPortal } from "react-dom";
+import { createOrder } from "../../app/lib/order-api";
 import { toast } from "sonner";
 
+/* ---------------- types ---------------- */
+
+type Product = {
+  id: string;
+  barcode: string;
+  name: string;
+  mrp: number;
+};
+
 type Item = {
-  orderItemId?: string;
   barcode: string;
   orderedQuantity: string;
   sellingPrice: string;
-  error?: string;
+  suggestions?: Product[];
 };
 
-export async function downloadInvoice(orderId: string) {
-  const blob = await getInvoice(orderId);
+/* ---------------- icons ---------------- */
 
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `invoice-${orderId}.pdf`;
-  document.body.appendChild(a);
-  a.click();
-
-  a.remove();
-  window.URL.revokeObjectURL(url);
-}
-
-function TrashIcon({ className = "" }) {
+function TrashIcon() {
   return (
     <svg
-      className={className}
       width="18"
       height="18"
       viewBox="0 0 24 24"
@@ -48,188 +48,274 @@ function TrashIcon({ className = "" }) {
   );
 }
 
-export default function CreateOrderModal({ onClose }: { onClose: () => void }) {
-  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+/* ---------------- dropdown portal ---------------- */
+
+function BarcodeDropdown({
+  anchor,
+  products,
+  onSelect,
+}: {
+  anchor: HTMLInputElement | null;
+  products: Product[];
+  onSelect: (p: Product) => void;
+}) {
+  const [style, setStyle] = useState<React.CSSProperties>({});
+
+  useLayoutEffect(() => {
+    if (!anchor) return;
+    const rect = anchor.getBoundingClientRect();
+
+    setStyle({
+      position: "absolute",
+      top: rect.bottom + 8,
+      left: rect.left,
+      width: rect.width,
+      zIndex: 9999,
+    });
+  }, [anchor, products.length]);
+
+  if (!anchor || products.length === 0) return null;
+
+  return createPortal(
+    <div
+      style={style}
+      className="rounded-xl border border-gray-200 bg-white shadow-[0_12px_40px_rgba(0,0,0,0.12)] overflow-hidden"
+    >
+      {products.map((p) => (
+        <button
+          key={p.id}
+          onClick={() => onSelect(p)}
+          className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-gray-50"
+        >
+          <div>
+            <p className="text-sm font-semibold">{p.name}</p>
+            <p className="text-xs text-gray-500">{p.barcode}</p>
+          </div>
+          <span className="text-sm font-semibold">₹{p.mrp}</span>
+        </button>
+      ))}
+    </div>,
+    document.body,
+  );
+}
+
+/* ---------------- component ---------------- */
+
+export default function CreateOrderModal({
+  onClose,
+}: {
+  onClose: () => void;
+}) {
   const [items, setItems] = useState<Item[]>([
     { barcode: "", orderedQuantity: "", sellingPrice: "" },
   ]);
 
-  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const barcodeRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const debounceTimers = useRef<Record<number, NodeJS.Timeout>>({});
+
+  /* ---------------- handlers ---------------- */
+
+  function updateField(
+    index: number,
+    field: keyof Item,
+    value: string,
+  ) {
+    setItems((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], [field]: value };
+      return copy;
+    });
+  }
+
+  function updateBarcode(index: number, value: string) {
+    setItems((prev) => {
+      const copy = [...prev];
+      copy[index] = {
+        ...copy[index],
+        barcode: value,
+        suggestions: [],
+      };
+      return copy;
+    });
+
+    clearTimeout(debounceTimers.current[index]);
+
+    if (!value.trim()) return;
+
+    debounceTimers.current[index] = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          "http://localhost:8080/api/products/search",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "barcode", query: value, page: 0, size: 8 }),
+            credentials: "include",
+          },
+        );
+
+        const data = await res.json();
+
+        setItems((prev) => {
+          const copy = [...prev];
+          copy[index].suggestions = data.content ?? [];
+          return copy;
+        });
+      } catch {
+        /* ignore */
+      }
+    }, 300);
+  }
+
+  function selectProduct(index: number, p: Product) {
+    clearTimeout(debounceTimers.current[index]);
+
+    setItems((prev) => {
+      const copy = [...prev];
+      copy[index] = {
+        ...copy[index],
+        barcode: p.barcode,
+        sellingPrice: String(p.mrp),
+        suggestions: [],
+      };
+      return copy;
+    });
+  }
 
   function addItem() {
-    setItems([
-      ...items,
+    setItems((prev) => [
+      ...prev,
       { barcode: "", orderedQuantity: "", sellingPrice: "" },
     ]);
   }
 
-  function removeItem(index: number) {
-    setItems(items.filter((_, i) => i !== index));
+  function removeItem(i: number) {
+    clearTimeout(debounceTimers.current[i]);
+    setItems((prev) => prev.filter((_, idx) => idx !== i));
   }
 
-  function update(index: number, field: keyof Item, value: string) {
-    const copy = [...items];
-    copy[index][field] = value;
-    copy[index].error = undefined;
-    setItems(copy);
-  }
-
-  /* ---------------- auto scroll ---------------- */
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    el.scrollTo({
-      top: el.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [items.length]);
+  /* ---------------- submit ---------------- */
 
   async function handleSubmit() {
     try {
-      const payload = items.map((i) => ({
-        barcode: i.barcode,
-        orderedQuantity: Number(i.orderedQuantity),
-        sellingPrice: Number(i.sellingPrice),
-      }));
-
-      const res = await createOrder(payload);
+      await createOrder(
+        items.map((i) => ({
+          barcode: i.barcode,
+          orderedQuantity: Number(i.orderedQuantity),
+          sellingPrice: Number(i.sellingPrice),
+        })),
+      );
 
       toast.success("Order created successfully");
-      setCreatedOrderId(res.orderId);
       onClose();
     } catch (e: any) {
-      toast.error(e.message || "Something went wrong", {
-        duration: Infinity,
-        closeButton: true,
-      });
+      toast.error(e.message || "Something went wrong");
     }
   }
 
+  /* ---------------- render ---------------- */
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-[760px] max-h-[90vh] overflow-hidden rounded-2xl bg-white shadow-2xl flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b px-6 py-4 shrink-0">
+      <div className="w-[760px] max-h-[90vh] rounded-2xl bg-white shadow-2xl flex flex-col">
+        <div className="border-b px-6 py-4 flex justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              Create Order
-            </h2>
+            <h2 className="text-lg font-semibold">Create Order</h2>
             <p className="text-sm text-gray-500">
-              Add items and confirm to place the order
+              Add items and place the order
             </p>
           </div>
-
-          <button
-            onClick={onClose}
-            className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-          >
-            ✕
-          </button>
+          <button onClick={onClose}>✕</button>
         </div>
 
-        {/* Items (scrollable) */}
-        <div
-          ref={scrollRef}
-          className="max-h-[420px] space-y-4 overflow-y-auto px-6 py-5"
-        >
+        <div className="px-6 py-5 space-y-4 overflow-y-auto max-h-[420px]">
           {items.map((item, i) => (
-            <div
-              key={i}
-              className="group relative rounded-xl border bg-gray-50 p-4 shadow-sm"
-            >
-              <div className="flex items-start gap-4">
-                {/* Inputs */}
-                <div className="grid flex-1 grid-cols-3 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-600">
-                      Barcode
-                    </label>
-                    <input
-                      value={item.barcode}
-                      onChange={(e) => update(i, "barcode", e.target.value)}
-                      className="w-full rounded-lg border px-3 py-2 text-sm focus:border-black focus:outline-none"
-                      placeholder="e.g. BRC123"
-                    />
-                  </div>
+            <div key={i} className="rounded-xl border bg-gray-50 p-4">
+              <div className="grid grid-cols-3 gap-4 items-end">
+                <div>
+                  <label className="text-xs font-medium text-gray-600">
+                    Barcode
+                  </label>
+                  <input
+                    ref={(el) => {
+                      barcodeRefs.current[i] = el;
+                    }}
+                    value={item.barcode}
+                    onChange={(e) =>
+                      updateBarcode(i, e.target.value)
+                    }
+                    className="w-full rounded-lg border px-3 py-2 text-sm"
+                  />
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-600">
-                      Quantity
-                    </label>
-                    <input
-                      type="number"
-                      value={item.orderedQuantity}
-                      onChange={(e) =>
-                        update(i, "orderedQuantity", e.target.value)
-                      }
-                      className="w-full rounded-lg border px-3 py-2 text-sm focus:border-black focus:outline-none"
-                      placeholder="0"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-600">
-                      Selling Price
-                    </label>
-                    <input
-                      type="number"
-                      value={item.sellingPrice}
-                      onChange={(e) =>
-                        update(i, "sellingPrice", e.target.value)
-                      }
-                      className="w-full rounded-lg border px-3 py-2 text-sm focus:border-black focus:outline-none"
-                      placeholder="₹0.00"
-                    />
-                  </div>
+                  <BarcodeDropdown
+                    anchor={barcodeRefs.current[i]}
+                    products={item.suggestions ?? []}
+                    onSelect={(p) => selectProduct(i, p)}
+                  />
                 </div>
 
-                {/* Delete */}
-                {items.length > 1 && (
-                  <button
-                    onClick={() => removeItem(i)}
-                    className="mt-6 rounded-lg border border-gray-200 bg-white p-2 text-gray-400 hover:border-red-300 hover:bg-red-50 hover:text-red-600"
-                    title="Remove item"
-                  >
-                    <TrashIcon />
-                  </button>
-                )}
+                <div>
+                  <label className="text-xs font-medium text-gray-600">
+                    Quantity
+                  </label>
+                  <input
+                    type="number"
+                    value={item.orderedQuantity}
+                    onChange={(e) =>
+                      updateField(
+                        i,
+                        "orderedQuantity",
+                        e.target.value,
+                      )
+                    }
+                    className="w-full rounded-lg border px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-600">
+                    Selling Price
+                  </label>
+                  <input
+                    type="number"
+                    value={item.sellingPrice}
+                    onChange={(e) =>
+                      updateField(
+                        i,
+                        "sellingPrice",
+                        e.target.value,
+                      )
+                    }
+                    className="w-full rounded-lg border px-3 py-2 text-sm"
+                  />
+                </div>
               </div>
 
-              {item.error && (
-                <p className="mt-2 text-sm font-medium text-red-600">
-                  {item.error}
-                </p>
+              {items.length > 1 && (
+                <button
+                  onClick={() => removeItem(i)}
+                  className="mt-3 text-red-500"
+                >
+                  <TrashIcon />
+                </button>
               )}
             </div>
           ))}
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between border-t px-6 py-4 shrink-0">
+        <div className="border-t px-6 py-4 flex justify-between">
           <button
             onClick={addItem}
-            className="text-sm font-medium text-blue-600 hover:underline"
+            className="text-blue-600 text-sm font-medium"
           >
             + Add another item
           </button>
-
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="rounded-lg border px-4 py-2 text-sm hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-
-            <button
-              onClick={handleSubmit}
-              className="rounded-lg bg-black px-5 py-2 text-sm font-medium text-white hover:bg-gray-900"
-            >
-              Submit Order
-            </button>
-          </div>
+          <button
+            onClick={handleSubmit}
+            className="rounded-lg bg-black px-5 py-2 text-sm font-medium text-white"
+          >
+            Submit Order
+          </button>
         </div>
       </div>
     </div>

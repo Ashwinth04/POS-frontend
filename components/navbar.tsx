@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { getCachedUser, saveUser, clearUser } from "../app/lib/auth-cache";
 
 type User = {
-  userId: string;
+  email: string;
   role: "ROLE_SUPERVISOR" | "ROLE_OPERATOR";
 };
 
@@ -108,7 +108,7 @@ export default function Navbar() {
     (item) => user?.role && item.roles.includes(user.role),
   );
 
-  const initials = user?.userId?.slice(0, 2).toUpperCase();
+  const initials = user?.email?.slice(0, 2).toUpperCase();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur">
@@ -158,7 +158,7 @@ export default function Navbar() {
                 {initials}
               </div>
               <div className="text-left text-sm">
-                <div className="font-medium leading-tight">{user.userId}</div>
+                <div className="font-medium leading-tight">{user.email}</div>
                 <div className="text-xs text-gray-500">
                   {user.role === "ROLE_SUPERVISOR" ? "Supervisor" : "Operator"}
                 </div>

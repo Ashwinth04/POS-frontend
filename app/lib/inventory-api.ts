@@ -20,11 +20,11 @@ async function handleResponse(res: Response) {
   return data;
 }
 
-export async function updateInventory(productId: string, quantity: number) {
+export async function updateInventory(barcode: string, quantity: number) {
   const res = await fetch(`${BASE}/update`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ productId, quantity }),
+    body: JSON.stringify({ barcode, quantity }),
     credentials: "include",
   });
   return handleResponse(res);
@@ -33,7 +33,7 @@ export async function updateInventory(productId: string, quantity: number) {
 export async function bulkUpdateInventory(base64file: string) {
   const res = await fetch("http://localhost:8080/api/inventory/bulkUpdate", {
     method: "POST",
-    credentials: "include", // important for session auth
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
