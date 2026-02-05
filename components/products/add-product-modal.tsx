@@ -89,6 +89,8 @@ export default function AddProductModal({ onAdded }: { onAdded: () => void }) {
               </Label>
 
               <Input
+                type={key === "mrp" ? "number" : "text"}
+                inputMode={key === "mrp" ? "numeric" : undefined}
                 placeholder={label}
                 value={form[key]}
                 onChange={(e) =>

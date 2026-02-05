@@ -24,7 +24,7 @@ interface Props {
 
 export default function SalesFilters(props: Props) {
   return (
-    <div className="bg-card border rounded-xl p-4 flex flex-wrap gap-3 items-end">
+    <div className="bg-card border rounded-xl p-4 flex flex-wrap gap-3 items-end mx-auto w-full max-w-4xl">
       {(["Start Date", "End Date"] as const).map((label, idx) => {
         const date = idx === 0 ? props.startDate : props.endDate;
         const onChange =

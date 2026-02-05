@@ -33,7 +33,7 @@ export default function ClientDetailsModal({ clients }: { clients: any[] }) {
           <TableHeader>
             <TableRow>
               <TableHead>Client</TableHead>
-              <TableHead className="text-right">Products</TableHead>
+              <TableHead className="text-right">Units Sold</TableHead>
               <TableHead className="text-right">Revenue</TableHead>
             </TableRow>
           </TableHeader>
@@ -43,7 +43,7 @@ export default function ClientDetailsModal({ clients }: { clients: any[] }) {
                 <TableCell>{c.clientName ?? "Walk-in"}</TableCell>
                 <TableCell className="text-right">{c.totalProducts}</TableCell>
                 <TableCell className="text-right">
-                  ₹ {c.totalRevenue.toLocaleString("en-IN")}
+                  ₹{c.totalRevenue.toLocaleString("en-IN")}
                 </TableCell>
               </TableRow>
             ))}

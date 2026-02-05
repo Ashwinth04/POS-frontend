@@ -19,10 +19,13 @@ export default function SalesSummaryCards({
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mx-auto w-full max-w-4xl">
       {items.map((i) => (
-        <Card key={i.label} className="border-muted shadow-sm">
-          <CardContent className="p-4">
+        <Card
+          key={i.label}
+          className="border-muted shadow-sm flex items-center justify-center h-20"
+        >
+          <CardContent className="p-4 text-center">
             <p className="text-sm text-muted-foreground">{i.label}</p>
             <p className="text-2xl font-semibold mt-1">{i.value}</p>
           </CardContent>
